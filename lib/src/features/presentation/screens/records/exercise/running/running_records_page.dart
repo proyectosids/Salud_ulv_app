@@ -20,12 +20,10 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_bloc/exerc
 import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_bloc/exercise_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/main_wrapper.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/records/exercise/running/running_full_list_page.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/records/exercise/walk/walk_full_list_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/fomaters.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/containers.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/data_tiles.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/exercise_list_widgets.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/expandable_sheet.dart';
@@ -78,20 +76,16 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
 
   // late List<Walk> records;
   // late List<LatLng> latPoints;
-  String? _activityID;
-
   List<Running> records = [];
   List<LatLng> points = [];
   int? _index;
-  bool _satellite = true;
+  bool _satellite = false;
 
   // late bool lenghtAvaliable = 0 > records.length - 1;
 
   // late int _index = lenghtAvaliable ? 0 : records.length + 1;
   // late int _index = records.length -1;
   // bool _indexInitialized = false;
-  bool _mapIsReady = false;
-
   bool get _hasPrevious => (_index ?? 0) > 0;
   bool get _hasNext => _index != null && _index! < records.length - 1;
 
@@ -110,14 +104,6 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
     if (!_hasNext) return;
     setState(() => _index = _index! + 1);
     _requestSamplesForCurrent(records[_index!].activityID!);
-  }
-
-  void _updateMapForCurrentWalk() {
-    // Si el mapa aún no se montó por primera vez, onMapReady se
-    // encargará; si ya está montado, actualizamos directo aquí.
-    if (_mapIsReady) {
-      fitRouteToScreen(points, _mapController);
-    }
   }
 
   void _requestSamplesForCurrent(String activityID) {
@@ -362,9 +348,10 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
                                                                 FontAwesomeIcons
                                                                     .stopwatch,
                                                             label: 'Duración',
-                                                            data: formatDuration(
-                                                              run.duration!,
-                                                            ),
+                                                            data:
+                                                                formatDuration(
+                                                                  run.duration!,
+                                                                ),
                                                             // sufix: 'm'
                                                           ),
                                                           GridDataTileTrasparent(
@@ -408,11 +395,8 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
                                                                 .personRunning,
                                                             label:
                                                                 'Velocidad maxima',
-                                                            data: '${run
-                                                                .avgSpeed!
-                                                                .toStringAsFixed(
-                                                                  1,
-                                                                )} m/s',
+                                                            data:
+                                                                '${run.avgSpeed!.toStringAsFixed(1)} m/s',
                                                             // sufix: '',
                                                           ),
                                                           GridDataTileTrasparent(
@@ -584,7 +568,7 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
                           label: "Comenzar carrera",
                           fontSize: context.fontsSize.body,
                           color: context.colors.secondary,
-                          textColor: context.colors.textSecondary,
+                          textColor: context.colors.onSecondary,
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(

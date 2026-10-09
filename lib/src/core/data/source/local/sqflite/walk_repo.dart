@@ -231,57 +231,44 @@ class WalkRepo implements IExerciseLocalRepo {
   }
 }
 
-
-
-
-
-
-
-class WalkSamplesRepo implements IActivitySampleRepo{
+class WalkSamplesRepo implements IActivitySampleRepo {
   Future<Database> get _db async => await AppDatabase.database;
   final _tableName = 'WalkActivitySample';
 
   @override
-Future<void> save(ActivitySample data) async {
-  try {
-    final db = await _db;
+  Future<void> save(ActivitySample data) async {
+    try {
+      final db = await _db;
 
-    final sample = data as WalkActivitySample;
-    final model = WalkActivitySampleDTO
-        .fromDomain(sample)
-        .toMap();
+      final sample = data as WalkActivitySample;
+      final model = WalkActivitySampleDTO.fromDomain(sample).toMap();
 
-    debugPrint('========== INSERT SAMPLE ==========');
+      debugPrint('========== INSERT SAMPLE ==========');
 
-    debugPrint('DB: $db');
-    debugPrint('SAVE DB: ${identityHashCode(db)}');
-    debugPrint('ID: [${sample.activityID}]');
-    debugPrint('MODEL: $model');
+      debugPrint('DB: $db');
+      debugPrint('SAVE DB: ${identityHashCode(db)}');
+      debugPrint('ID: [${sample.activityID}]');
+      debugPrint('MODEL: $model');
 
-    final id = await db.insert(
-      _tableName,
-      model,
-    );
+      final id = await db.insert(_tableName, model);
 
-    debugPrint('INSERTED ROW ID: $id');
+      debugPrint('INSERTED ROW ID: $id');
 
-    // Immediately query it using THE SAME db instance.
-    final check = await db.query(
-      _tableName,
-      where: 'sampleID = ?',
-      whereArgs: [id],
-    );
+      // Immediately query it using THE SAME db instance.
+      final check = await db.query(
+        _tableName,
+        where: 'sampleID = ?',
+        whereArgs: [id],
+      );
 
-    debugPrint('IMMEDIATE CHECK: $check');
-  } catch (e, stackTrace) {
-    debugPrint('ERROR INSERTING SAMPLE: $e');
-    debugPrintStack(stackTrace: stackTrace);
+      debugPrint('IMMEDIATE CHECK: $check');
+    } catch (e, stackTrace) {
+      debugPrint('ERROR INSERTING SAMPLE: $e');
+      debugPrintStack(stackTrace: stackTrace);
 
-    throw Exception("Error in saving data");
+      throw Exception("Error in saving data");
+    }
   }
-}
-
-
 
   // @override
   // Future<List<IActivitySample>?>getSamples (String activityID) async {
@@ -290,7 +277,7 @@ Future<void> save(ActivitySample data) async {
   //     final db = await _db;
 
   //     final data = await db.query(
-  //       _tableName, 
+  //       _tableName,
   //       where: 'activityID = ?',
   //       whereArgs: [activityID],
   //       orderBy: 'timestamp_ms DESC');
@@ -308,76 +295,48 @@ Future<void> save(ActivitySample data) async {
   //   }
   // }
 
-@override
-Future<List<IActivitySample>?> getSamples(String activityID) async {
-  try {
-    final db = await _db;
+  @override
+  Future<List<IActivitySample>?> getSamples(String activityID) async {
+    try {
+      final db = await _db;
+      final data = await db.query(
+        _tableName,
+        where: 'activityID = ?',
+        whereArgs: [activityID],
+        orderBy: 'timestamp_ms ASC',
+      );
 
-    // debugPrint('========== GET SAMPLES ==========');
-    // debugPrint('GET DB: ${identityHashCode(db)}');
+      // debugPrint('MATCHING ROWS: ${data.length}');
+      // debugPrint('MATCHING DATA: $data');
 
-    // debugPrint('Searching activityID: [$activityID]');
-    // debugPrint('Table: $_tableName');
+      final result = data
+          .map((row) => WalkActivitySampleDTO.fromMap(row).toDomain())
+          .toList();
 
-    // First: see EVERYTHING in the table
-    final allRows = await db.query(_tableName);
+      // debugPrint('RESULT: ${result.length}');
 
-    debugPrint('TOTAL ROWS: ${allRows.length}');
+      return result;
+    } catch (e) {
+      // debugPrint('GET SAMPLES ERROR: $e');
+      // debugPrintStack(stackTrace: stackTrace);
 
-    // for (final row in allRows) {
-    //   // debugPrint(
-    //   //   'DB sampleID=${row['sampleID']} '
-    //   //   'activityID=[${row['activityID']}]',
-    //   // );
-    // }
-
-    // Second: query specifically
-    final data = await db.query(
-      _tableName,
-      where: 'activityID = ?',
-      whereArgs: [activityID],
-      orderBy: 'timestamp_ms ASC',
-    );
-
-    // debugPrint('MATCHING ROWS: ${data.length}');
-    // debugPrint('MATCHING DATA: $data');
-
-    final result = data
-        .map(
-          (row) => WalkActivitySampleDTO
-              .fromMap(row)
-              .toDomain(),
-        )
-        .toList();
-
-    // debugPrint('RESULT: ${result.length}');
-
-    return result;
-  } catch (e, stackTrace) {
-    // debugPrint('GET SAMPLES ERROR: $e');
-    // debugPrintStack(stackTrace: stackTrace);
-
-    throw Exception("Error in getting data");
+      throw Exception("Error in getting data");
+    }
   }
-}
-
-
 
   @override
-  Future<void> delete(String activityID) async{
+  Future<void> delete(String activityID) async {
     try {
       final db = await _db;
 
       await db.delete(
         _tableName,
         where: 'activityID == ?',
-        whereArgs: [activityID]
+        whereArgs: [activityID],
       );
-      
     } catch (e) {
       debugPrint(e.toString());
       throw Exception("Error in deleting data");
     }
   }
-
 }

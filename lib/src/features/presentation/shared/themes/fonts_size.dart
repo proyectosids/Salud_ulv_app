@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 @immutable
 class AppFonts extends ThemeExtension<AppFonts> {
   const AppFonts({
@@ -25,7 +24,7 @@ class AppFonts extends ThemeExtension<AppFonts> {
     title: 20,
     body: 16,
     caption: 12,
-    details: 10
+    details: 10,
   );
 
   @override
@@ -48,10 +47,7 @@ class AppFonts extends ThemeExtension<AppFonts> {
   }
 
   @override
-  AppFonts lerp(
-    covariant AppFonts? other,
-    double t,
-  ) {
+  AppFonts lerp(covariant AppFonts? other, double t) {
     if (other == null) return this;
 
     return AppFonts(
@@ -71,7 +67,6 @@ class AppFonts extends ThemeExtension<AppFonts> {
 
 extension AppFontsContext on BuildContext {
   AppFonts get fontsSize {
-    return Theme.of(this).extension<AppFonts>() ??
-        AppFonts.standard;
+    return Theme.of(this).extension<AppFonts>() ?? AppFonts.standard;
   }
 }

@@ -205,19 +205,19 @@ class _NumericRulerPickerState extends State<NumericRulerPicker> {
   }
 
   void _calculateItemCount() {
-  if (widget.step <= 0) {
-    _itemCount = 1;
-    return;
+    if (widget.step <= 0) {
+      _itemCount = 1;
+      return;
+    }
+
+    final range = widget.controller.max - widget.controller.min;
+
+    _itemCount = (range / widget.step).round() + 1;
+
+    if (_itemCount < 1) {
+      _itemCount = 1;
+    }
   }
-
-  final range = widget.controller.max - widget.controller.min;
-
-  _itemCount = (range / widget.step).round() + 1;
-
-  if (_itemCount < 1) {
-    _itemCount = 1;
-  }
-}
 
   int _valueToIndex(double value) {
     final index = ((value - widget.controller.min) / widget.step).round();
@@ -226,18 +226,12 @@ class _NumericRulerPickerState extends State<NumericRulerPicker> {
   }
 
   double _indexToValue(int index) {
-  final value = widget.controller.min + (index * widget.step);
+    final value = widget.controller.min + (index * widget.step);
 
-  final clean = double.parse(value.toStringAsFixed(10));
+    final clean = double.parse(value.toStringAsFixed(10));
 
-  return clean
-      .clamp(
-        widget.controller.min,
-        widget.controller.max,
-      )
-      .toDouble();
-}
-
+    return clean.clamp(widget.controller.min, widget.controller.max).toDouble();
+  }
 
   void _onExternalValueChanged(double value) {
     if (!mounted || _isInternalScroll) return;
@@ -432,7 +426,8 @@ class _NumericRulerPickerState extends State<NumericRulerPicker> {
                                       ? 22
                                       : 14,
                                   color:
-                                      widget.inactiveColor ?? colors.onPrimary,
+                                      widget.inactiveColor ??
+                                      colors.textSecondary,
                                 ),
                               ],
                             ),

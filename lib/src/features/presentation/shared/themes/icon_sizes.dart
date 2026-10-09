@@ -27,7 +27,7 @@ class AppIconSizes extends ThemeExtension<AppIconSizes> {
     lg: 25,
     xl: 30,
     xxl: 75,
-    mega: 150
+    mega: 150,
   );
 
   @override
@@ -38,7 +38,7 @@ class AppIconSizes extends ThemeExtension<AppIconSizes> {
     double? lg,
     double? xl,
     double? xxl,
-    double? mega
+    double? mega,
   }) {
     return AppIconSizes(
       xs: xs ?? this.xs,
@@ -47,15 +47,12 @@ class AppIconSizes extends ThemeExtension<AppIconSizes> {
       lg: lg ?? this.lg,
       xl: xl ?? this.xl,
       xxl: xxl ?? this.xxl,
-      mega: mega ?? this.mega
+      mega: mega ?? this.mega,
     );
   }
 
   @override
-  AppIconSizes lerp(
-    covariant AppIconSizes? other,
-    double t,
-  ) {
+  AppIconSizes lerp(covariant AppIconSizes? other, double t) {
     if (other == null) return this;
 
     return AppIconSizes(
@@ -65,7 +62,7 @@ class AppIconSizes extends ThemeExtension<AppIconSizes> {
       lg: _lerp(lg, other.lg, t),
       xl: _lerp(xl, other.xl, t),
       xxl: _lerp(xxl, other.xxl, t),
-      mega: _lerp(mega, other.mega, t)
+      mega: _lerp(mega, other.mega, t),
     );
   }
 
@@ -76,7 +73,6 @@ class AppIconSizes extends ThemeExtension<AppIconSizes> {
 
 extension AppIconSizesContext on BuildContext {
   AppIconSizes get iconSize {
-    return Theme.of(this).extension<AppIconSizes>() ??
-        AppIconSizes.standard;
+    return Theme.of(this).extension<AppIconSizes>() ?? AppIconSizes.standard;
   }
 }

@@ -1,0 +1,43 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Toolchain
+        run: flutter --version
+
+      - name: Configure test environment
+        run: cp .env.example .env
+
+      - name: Dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
+      - name: Validate motion fusion
+        run: dart tool/validate_motion_tracking.dart
+
+      - name: Compile Android debug artifact
+        run: flutter build apk --debug

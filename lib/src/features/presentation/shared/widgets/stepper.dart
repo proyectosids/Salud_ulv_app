@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/input_fields.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
 
 class CustomStepper extends StatelessWidget {
@@ -16,7 +15,7 @@ class CustomStepper extends StatelessWidget {
     this.continueLabel,
     this.titleSize,
     this.mainColor,
-    this.btnTextColor
+    this.btnTextColor,
   });
 
   final int currentStep;
@@ -42,7 +41,11 @@ class CustomStepper extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CustomStepIndicator(currentStep: currentStep, stepTitles: stepTitles, titleSize: titleSize,),
+        CustomStepIndicator(
+          currentStep: currentStep,
+          stepTitles: stepTitles,
+          titleSize: titleSize,
+        ),
         SizedBox(height: spacing.md),
 
         AnimatedSwitcher(
@@ -99,9 +102,14 @@ class CustomStepper extends StatelessWidget {
                             color: colors.tertiary,
                           ),
                         )
-                      : 
-                        CustomTextWidget(label: continueLabel ??
-                              (isLastStep ? 'Enviar' : 'Siguiente'), fontSize: context.fontsSize.caption, fontWeight: .w700, color: colors.textSecondary,),
+                      : CustomTextWidget(
+                          label:
+                              continueLabel ??
+                              (isLastStep ? 'Enviar' : 'Siguiente'),
+                          fontSize: context.fontsSize.caption,
+                          fontWeight: .w700,
+                          color: colors.textSecondary,
+                        ),
                 ),
               ),
             ),
@@ -148,24 +156,28 @@ class CustomStepIndicator extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isCompleted || isActive
-                          ? colors.onSecondary
-                          : colors.primary,
+                          ? colors.secondary
+                          : colors.surface,
                       border: Border.all(
                         color: isCompleted || isActive
-                            ? colors.onSecondary
+                            ? colors.secondary
                             : colors.border,
                         width: 1.5,
                       ),
                     ),
                     child: Center(
                       child: isCompleted
-                          ? Icon(Icons.check, size: context.iconSize.sm, color: colors.onPrimary)
+                          ? Icon(
+                              Icons.check,
+                              size: context.iconSize.sm,
+                              color: colors.onSecondary,
+                            )
                           : Text(
                               '${index + 1}',
                               style: TextStyle(
                                 color: isActive
-                                    ? colors.textSecondary 
-                                    : colors.textPrimary,
+                                    ? colors.onSecondary
+                                    : colors.textSecondary,
                                 fontWeight: FontWeight.w600,
                                 fontSize: titleSize ?? fontSize.details,
                               ),
@@ -181,7 +193,9 @@ class CustomStepIndicator extends StatelessWidget {
                       label: stepTitles[index],
                       fontSize: titleSize ?? fontSize.details,
                       fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                      color: isActive ? colors.textPrimary : colors.onSecondary,
+                      color: isActive
+                          ? colors.textPrimary
+                          : colors.textSecondary,
                       textAlign: TextAlign.center,
                     ),
                   ),

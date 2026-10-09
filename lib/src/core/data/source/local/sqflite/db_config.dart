@@ -1,4 +1,5 @@
 import 'package:path/path.dart';
+import 'package:salud_ulv_app/src/core/models/exercise_categories.dart';
 import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
@@ -19,8 +20,36 @@ class AppDatabase {
 
     return await openDatabase(
       path,
-      version: 2,
-      onUpgrade: (db, oldVersion, newVersion) {},
+      version: 3,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 3) {
+          await db.update(
+            'ActivityCategory',
+            {'categoryName': 'walk'},
+            where: 'categoryID = ?',
+            whereArgs: [ExerciseCategoryIds.walk],
+          );
+          await db.update(
+            'ActivityCategory',
+            {'categoryName': 'running'},
+            where: 'categoryID = ?',
+            whereArgs: [ExerciseCategoryIds.running],
+          );
+          await db.insert('ActivityCategory', {
+            'categoryID': ExerciseCategoryIds.cycling,
+            'categoryName': 'cycling',
+          }, conflictAlgorithm: ConflictAlgorithm.replace);
+          await db.update('WalkActivity', {
+            'categoryID': ExerciseCategoryIds.walk,
+          });
+          await db.update('RunningActivity', {
+            'categoryID': ExerciseCategoryIds.running,
+          });
+          await db.update('CyclingActivity', {
+            'categoryID': ExerciseCategoryIds.cycling,
+          });
+        }
+      },
 
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
@@ -85,17 +114,17 @@ class AppDatabase {
 
         // Sets categories
         await db.insert('ActivityCategory', {
-          'categoryID': 1,
-          'categoryName': 'aerobic',
+          'categoryID': ExerciseCategoryIds.walk,
+          'categoryName': 'walk',
         });
         await db.insert('ActivityCategory', {
-          'categoryID': 2,
-          'categoryName': 'strength',
+          'categoryID': ExerciseCategoryIds.running,
+          'categoryName': 'running',
         });
-
-
-
-
+        await db.insert('ActivityCategory', {
+          'categoryID': ExerciseCategoryIds.cycling,
+          'categoryName': 'cycling',
+        });
 
         await db.execute('''
         CREATE TABLE WalkActivity (
@@ -157,10 +186,7 @@ class AppDatabase {
         ON WalkActivitySample(activityID, timestamp_ms)
       ''');
 
-
-
-
-      await db.execute('''
+        await db.execute('''
         CREATE TABLE RunningActivity (
           activityID TEXT PRIMARY KEY NOT NULL,
           userUUID TEXT NOT NULL,
@@ -219,10 +245,7 @@ class AppDatabase {
         ON RunningActivitySample(activityID, timestamp_ms)
       ''');
 
-
-
-
-      await db.execute('''
+        await db.execute('''
         CREATE TABLE CyclingActivity (
           activityID TEXT PRIMARY KEY NOT NULL,
           userUUID TEXT NOT NULL,
@@ -281,9 +304,6 @@ class AppDatabase {
         CREATE INDEX idx_CyclingActivitySample_activity_timestamp
         ON CyclingActivitySample(activityID, timestamp_ms)
       ''');
-
-
-
       },
     );
   }

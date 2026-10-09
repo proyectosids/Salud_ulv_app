@@ -46,7 +46,7 @@ class _StatCard extends StatelessWidget {
       width: 125,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: colors.onPrimary.withValues(alpha: 0.07),
+        color: colors.secondary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(context.spacing.radiusLg),
       ),
       child: Row(
@@ -60,7 +60,7 @@ class _StatCard extends StatelessWidget {
                 color: colors.surface.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 18, color: colors.onPrimary),
+              child: Icon(icon, size: 18, color: colors.secondary),
             ),
             const SizedBox(width: 10),
           ],
@@ -133,7 +133,7 @@ Widget exerciseInfoCard(
                 color: colors.primary.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: colors.onPrimary, size: 24),
+              child: Icon(icon, color: colors.secondary, size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -161,11 +161,11 @@ Widget exerciseInfoCard(
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: Colors.green,
+                  color: colors.success,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.green.withValues(alpha: 0.4),
+                      color: colors.success.withValues(alpha: 0.35),
                       blurRadius: 8,
                     ),
                   ],
@@ -220,32 +220,6 @@ Widget exerciseControls(
   required VoidCallback onDiscard,
   required VoidCallback onSave,
 }) {
-  final colors = context.colors;
-
-  Widget circleButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-    required Color background,
-    required Color foreground,
-    double size = 90,
-    double iconSize = 28,
-  }) {
-    return Material(
-      color: background,
-      shape: const CircleBorder(),
-      elevation: 0,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onPressed,
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: Icon(icon, color: foreground, size: iconSize),
-        ),
-      ),
-    );
-  }
-
   return Container(
     padding: EdgeInsets.symmetric(vertical: context.spacing.md),
     decoration: BoxDecoration(
@@ -366,7 +340,7 @@ class TrackActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final bg = color ?? colors.secondary;
-    final fg = foregroundColor ?? Colors.white;
+    final fg = foregroundColor ?? colors.foregroundFor(bg);
 
     return SizedBox(
       width: width ?? double.infinity,
@@ -433,7 +407,7 @@ class _SlideToConfirmState extends State<SlideToConfirm> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final accent = colors.warning;
+    final accent = widget.color ?? colors.warning;
     final width = widget.width ?? double.infinity;
 
     return LayoutBuilder(
@@ -527,7 +501,7 @@ class _SlideToConfirmState extends State<SlideToConfirm> {
                       color: accent,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(widget.icon, color: Colors.white),
+                    child: Icon(widget.icon, color: colors.onWarning),
                   ),
                 ),
               ),
@@ -538,9 +512,6 @@ class _SlideToConfirmState extends State<SlideToConfirm> {
     );
   }
 }
-
-
-
 
 class ExerciseTypeSelector extends StatelessWidget {
   const ExerciseTypeSelector({
@@ -563,7 +534,7 @@ class ExerciseTypeSelector extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(context.spacing.xs),
         decoration: BoxDecoration(
-          color: colors.onPrimary.withValues(alpha: 0.07),
+          color: colors.secondary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(context.spacing.radiusLg),
         ),
         child: Row(
@@ -614,7 +585,7 @@ class _TypeItem extends StatelessWidget {
             Icon(
               type.icon,
               size: context.iconSize.md,
-              color: isSelected ? Colors.white : colors.textPrimary,
+              color: isSelected ? colors.onSecondary : colors.textPrimary,
             ),
             const SizedBox(height: 4),
             Text(
@@ -622,7 +593,7 @@ class _TypeItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: context.fontsSize.details,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : colors.textPrimary,
+                color: isSelected ? colors.onSecondary : colors.textPrimary,
               ),
             ),
           ],
@@ -631,11 +602,6 @@ class _TypeItem extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
 
 class TrackingSheetContent extends StatelessWidget {
   const TrackingSheetContent({super.key});
@@ -667,8 +633,7 @@ class TrackingSheetContent extends StatelessWidget {
   List<_TileData> _statsFor(ExerciseTrackingState state) {
     final active = state is ActiveExerciseState ? state : null;
 
-    final hasDistance =
-        active?.distance != null && active!.distance! > 0;
+    final hasDistance = active?.distance != null && active!.distance! > 0;
     final distance = hasDistance
         ? (active.distance! / 1000).toStringAsFixed(2)
         : '--';
@@ -730,8 +695,8 @@ class TrackingSheetContent extends StatelessWidget {
         final status = isPaused
             ? 'Pausado'
             : isTracking
-                ? 'En progreso'
-                : 'Listo para comenzar';
+            ? 'En progreso'
+            : 'Listo para comenzar';
 
         final stats = _statsFor(state);
 

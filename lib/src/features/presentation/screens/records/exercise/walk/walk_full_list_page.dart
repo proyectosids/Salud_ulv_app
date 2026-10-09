@@ -1,12 +1,9 @@
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:salud_ulv_app/src/core/models/exercise_summaries.dart';
 import 'package:salud_ulv_app/src/core/models/exercises.dart';
 import 'package:salud_ulv_app/src/core/usecase/exercises/get_all_exercise.dart';
-import 'package:salud_ulv_app/src/core/usecase/exercises/get_recent_exercise.dart';
-import 'package:salud_ulv_app/src/core/data/DTOs/walk_dto.dart';
 import 'package:salud_ulv_app/src/core/data/source/token/current_user_service.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/walk_repo.dart';
 import 'package:salud_ulv_app/src/core/usecase/exercises/get_summart.dart';
@@ -16,11 +13,9 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_bloc/exerc
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/fomaters.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/containers.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/data_tiles.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/exercise_list_widgets.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/listviews.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/snackbar.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/tab_bar.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/tabs_menu.dart';

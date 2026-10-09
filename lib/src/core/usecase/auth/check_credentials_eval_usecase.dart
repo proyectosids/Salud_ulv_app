@@ -1,7 +1,6 @@
 // import 'package:salud_ulv_app/src/core/models/user.dart';
 // import 'package:salud_ulv_app/src/core/repositories/repos/auth_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/auth_repo.dart';
-import 'package:salud_ulv_app/src/core/repositories/repos/otp_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/services/check_connection_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/use-cases/auth_usecase.dart';
 import 'package:salud_ulv_app/src/core/usecase/auth/auth_command.dart';

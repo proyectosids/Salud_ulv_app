@@ -5,7 +5,6 @@ import 'package:salud_ulv_app/src/core/data/source/local/sqflite/member_repo.dar
 import 'package:salud_ulv_app/src/core/models/anthropometrics.dart';
 import 'package:salud_ulv_app/src/core/usecase/anthropometrics/check_recent.dart';
 import 'package:salud_ulv_app/src/core/usecase/anthropometrics/get_byfield_usecase.dart';
-import 'package:salud_ulv_app/src/core/usecase/anthropometrics/get_recent_usecase.dart';
 import 'package:salud_ulv_app/src/core/usecase/anthropometrics/getall_usecase.dart';
 import 'package:salud_ulv_app/src/core/data/source/token/current_user_service.dart';
 // import 'package:salud_ulv_app/src/core/usecase/anthropometrics/getall_usecase.dart';
@@ -15,19 +14,15 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_
 import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/anthropometrics/register_anthro_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/profile/profile_page.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/records/anthropometrics/anthro_full_list_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/fomaters.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/eval_value.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/exercise_list_widgets.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/snackbar.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/value_range.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/containers.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/data_tiles.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/graphs.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/listviews.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
 
 class AnthroRecordsPage extends StatelessWidget {
@@ -83,8 +78,6 @@ class _AnthroRecordsPage extends StatefulWidget {
 class _AnthroRecordsPageState extends State<_AnthroRecordsPage> {
   final _formKey = GlobalKey<FormState>();
 
-  AnthroField _selectedField = AnthroField.height;
-
   late List<Anthropometrics> records;
 
   late int _index = records.length - 1;
@@ -100,18 +93,6 @@ class _AnthroRecordsPageState extends State<_AnthroRecordsPage> {
   void _goNext() {
     if (!_hasNext) return;
     setState(() => _index++);
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
-  }
-
-  void _selectField(AnthroField field) {
-    setState(() {
-      _selectedField = field;
-    });
   }
 
   @override
@@ -229,7 +210,7 @@ class _AnthroRecordsPageState extends State<_AnthroRecordsPage> {
                                   label: "Agregar datos",
                                   fontSize: context.fontsSize.body,
                                   color: context.colors.secondary,
-                                  textColor: context.colors.textSecondary,
+                                  textColor: context.colors.onSecondary,
                                   onPressed: () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -371,7 +352,10 @@ class _AnthroRecordsPageState extends State<_AnthroRecordsPage> {
                                                           .fontsSize
                                                           .details,
                                                     ),
-                                                    SizedBox(height: context.spacing.xs,),
+                                                    SizedBox(
+                                                      height:
+                                                          context.spacing.xs,
+                                                    ),
                                                     GestureDetector(
                                                       onTap: () => Navigator.push(
                                                         context,
@@ -386,7 +370,8 @@ class _AnthroRecordsPageState extends State<_AnthroRecordsPage> {
                                                         fontSize: context
                                                             .fontsSize
                                                             .details,
-                                                            color: context.colors.low,
+                                                        color:
+                                                            context.colors.low,
                                                       ),
                                                     ),
                                                   ],

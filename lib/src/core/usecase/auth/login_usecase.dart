@@ -1,5 +1,3 @@
-// import 'package:salud_ulv_app/src/core/models/user.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:salud_ulv_app/src/core/models/member.dart';
 import 'package:salud_ulv_app/src/core/models/user.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/auth_repo.dart';
@@ -36,8 +34,6 @@ class LoginUsecase implements ILoginUseCase {
 
     if (token == null || token.isEmpty) return;
 
-    debugPrint('Token: $token');
-
     // final data = tokenRepo.decode(token);
 
     // final user = User(
@@ -56,15 +52,6 @@ class LoginUsecase implements ILoginUseCase {
     final typeID = data['typeID'];
     final roles = (data['roles'] as List).cast<String>();
     final userUUID = tokenUser['userUUID'];
-    // debugPrint('In login use case saving token');
-    // debugPrint(data['roles'].toString());
-
-    debugPrint('In login use case: $userUUID [--------------------------DEBUG--------------------------]');
-    debugPrint('In login use case: $roles [--------------------------DEBUG--------------------------]');
-
-
-    // debugPrint(tokenUser['userUUID']);
-
     final user = User(
       userUUID: userUUID,
       userCode: tokenUser['userCode'],
@@ -74,20 +61,18 @@ class LoginUsecase implements ILoginUseCase {
       email: tokenUser['email'],
       currentRole: roles[0],
       roles: roles,
-      createdAt: DateTime.parse(tokenUser['createdAt'] as String)
+      createdAt: DateTime.parse(tokenUser['createdAt'] as String),
     );
 
     // debugPrint(user.currentRole);
 
-    if(user.userUUID == null) return;
+    if (user.userUUID == null) return;
     // save user from token data
     await userRepo.save(user);
-
 
     // await userRepo.setCurrentRole(userUUID!, roles[0]);
     // debugPrint("current role set [--------------------------DEBUG--------------------------]");
     // await userRepo.setRoles(userUUID, roles);
-
 
     final memberInfo = MemberInfo(
       userUUID: user.userUUID,

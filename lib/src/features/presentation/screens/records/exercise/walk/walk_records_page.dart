@@ -6,11 +6,8 @@ import 'package:latlong2/latlong.dart';
 // import 'package:path/path.dart';
 import 'package:salud_ulv_app/src/core/models/exercise_samples.dart';
 import 'package:salud_ulv_app/src/core/models/exercises.dart';
-import 'package:salud_ulv_app/src/core/repositories/repos/sensors_repo.dart';
 import 'package:salud_ulv_app/src/core/usecase/exercises/get_all_exercise.dart';
-import 'package:salud_ulv_app/src/core/usecase/exercises/get_recent_exercise.dart';
 import 'package:salud_ulv_app/src/core/usecase/exercises/get_recent_samples.dart';
-import 'package:salud_ulv_app/src/core/data/DTOs/walk_dto.dart';
 import 'package:salud_ulv_app/src/core/data/source/token/current_user_service.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/walk_repo.dart';
 // import 'package:salud_ulv_app/src/core/data/source/local/sqflite/walk_samples_repo.dart';
@@ -20,10 +17,10 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_bloc/exerc
 import 'package:salud_ulv_app/src/features/presentation/screens/main_wrapper.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/records/exercise/walk/walk_full_list_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/fomaters.dart';
+import 'package:salud_ulv_app/src/features/presentation/shared/helpers/route_points.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/containers.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/data_tiles.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/exercise_list_widgets.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/expandable_sheet.dart';
@@ -76,20 +73,16 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
 
   // late List<Walk> records;
   // late List<LatLng> latPoints;
-  String? _activityID;
-
   List<Walk> records = [];
   List<LatLng> points = [];
   int? _index;
-  bool _satellite = true;
+  bool _satellite = false;
 
   // late bool lenghtAvaliable = 0 > records.length - 1;
 
   // late int _index = lenghtAvaliable ? 0 : records.length + 1;
   // late int _index = records.length -1;
   // bool _indexInitialized = false;
-  bool _mapIsReady = false;
-
   bool get _hasPrevious => (_index ?? 0) > 0;
   bool get _hasNext => _index != null && _index! < records.length - 1;
 
@@ -110,14 +103,6 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
     _requestSamplesForCurrent(records[_index!].activityID!);
   }
 
-  void _updateMapForCurrentWalk() {
-    // Si el mapa aún no se montó por primera vez, onMapReady se
-    // encargará; si ya está montado, actualizamos directo aquí.
-    if (_mapIsReady) {
-      fitRouteToScreen(points, _mapController);
-    }
-  }
-
   void _requestSamplesForCurrent(String activityID) {
     debugPrint('in sample event: activityID');
     context.read<ExerciseGetSamplesBLoc>().add(
@@ -127,7 +112,9 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
 
   void _onMapReady() {
     if (points.isEmpty) return;
-    _mapController.move(points.first, 20);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) fitRouteToScreen(points, _mapController);
+    });
   }
 
   @override
@@ -271,16 +258,10 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
 
                             // debugPrint(data.first.activityID.toString());
 
-                            final coordinates = data.map(
-                              (s) => Coordinates(
-                                latitude: s.latitude ?? 0,
-                                longitude: s.longitude ?? 0,
-                              ),
-                            );
-
-                            points = coordinates
-                                .map((c) => LatLng(c.latitude, c.longitude))
-                                .toList();
+                            // Old versions could persist (0, 0) before the
+                            // first reliable GPS fix. Exclude invalid points so
+                            // the route is never stretched toward Africa.
+                            points = validRoutePoints(data);
 
                             return Column(
                               children: [
@@ -301,16 +282,30 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
                                   child: Stack(
                                     children: [
                                       Positioned.fill(
-                                        child: MapWidget(
-                                          startPoint: points.first,
-                                          endPoint: points.last,
-                                          routePoints: points,
-                                          mapController: _mapController,
-                                          mapReady: _onMapReady,
-                                          interactive: true,
-                                          satellite: _satellite,
-                                          showCurrentLocation: false,
-                                        ),
+                                        child: points.isEmpty
+                                            ? ColoredBox(
+                                                color:
+                                                    context.colors.background,
+                                                child: Center(
+                                                  child: CustomTextWidget(
+                                                    label:
+                                                        'Esta actividad no contiene puntos GPS válidos',
+                                                    fontSize:
+                                                        context.fontsSize.body,
+                                                  ),
+                                                ),
+                                              )
+                                            : MapWidget(
+                                                key: ValueKey(walk.activityID),
+                                                startPoint: points.first,
+                                                endPoint: points.last,
+                                                routePoints: points,
+                                                mapController: _mapController,
+                                                mapReady: _onMapReady,
+                                                interactive: true,
+                                                satellite: _satellite,
+                                                showCurrentLocation: false,
+                                              ),
                                       ),
 
                                       Positioned(
@@ -582,7 +577,7 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
                           label: "Comenzar caminata",
                           fontSize: context.fontsSize.body,
                           color: context.colors.secondary,
-                          textColor: context.colors.textSecondary,
+                          textColor: context.colors.onSecondary,
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(

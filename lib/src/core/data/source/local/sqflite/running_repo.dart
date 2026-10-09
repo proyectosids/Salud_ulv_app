@@ -4,7 +4,6 @@ import 'package:salud_ulv_app/src/core/data/DTOs/running_dto.dart';
 import 'package:salud_ulv_app/src/core/models/exercise_samples.dart';
 import 'package:salud_ulv_app/src/core/models/exercises.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/excercise_repo.dart';
-import 'package:salud_ulv_app/src/core/data/DTOs/walk_dto.dart';
 // import 'package:salud_ulv_app/src/features/data/source/local/services/current_user_session.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/db_config.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/exercise_sample_repo.dart';

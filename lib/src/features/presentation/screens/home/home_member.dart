@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -9,7 +12,6 @@ import 'package:salud_ulv_app/src/core/usecase/exercises/get_recent_exercise.dar
 import 'package:salud_ulv_app/src/core/usecase/exercises/send_exercise.dart';
 import 'package:salud_ulv_app/src/core/usecase/profile/get_profile_info_usecase.dart';
 import 'package:salud_ulv_app/src/core/usecase/profile/get_user_name.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/main_wrapper.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/records/anthropometrics/anthro_records_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/records/exercise/walk/walk_records_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/animations.dart';
@@ -17,7 +19,6 @@ import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.d
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/containers.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/data_tiles.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/listviews.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/progress_meter.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/snackbar.dart';
 import 'package:salud_ulv_app/src/features/services/check_connection.dart';
 import 'package:salud_ulv_app/src/core/data/source/token/current_user_service.dart';
@@ -26,6 +27,8 @@ import 'package:salud_ulv_app/src/core/data/source/local/sqflite/anthro_repo.dar
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/member_repo.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/user_repo.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/walk_repo.dart';
+import 'package:salud_ulv_app/src/core/data/source/local/sqflite/running_repo.dart';
+import 'package:salud_ulv_app/src/core/data/source/local/sqflite/cycling_repo.dart';
 import 'package:salud_ulv_app/src/core/data/source/network/anthro_controller.dart';
 import 'package:salud_ulv_app/src/core/data/source/network/exercise_controller.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_bloc.dart';
@@ -40,9 +43,7 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profil
 import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profile_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profile_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/anthropometrics/register_anthro_page.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/exercise%20tracking/exercise_tracking_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/profile/profile_page.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/records/main_records_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
@@ -66,10 +67,16 @@ class MemberHomePage extends StatelessWidget {
           ),
         ),
 
-        // BlocProvider(
-        //   create: (context) => SendExerciseBloc(
-        //     sendExerciseUseCase: SendExerciseUseCase(ExerciseRepo(), ExerciseController(), CheckConnection()))
-        //   ),
+        BlocProvider(
+          create: (context) => SendExerciseBloc(
+            sendExerciseUseCase: SendExerciseUseCase(
+              [WalkRepo(), RunningRepo(), CyclingRepo()],
+              ExerciseController(),
+              CurrentUserSession(),
+              CheckConnection(),
+            ),
+          ),
+        ),
         BlocProvider(
           create: (context) => GetUserNameBloc(
             getUserName: GetUserNameUseCase(
@@ -125,6 +132,8 @@ class _MemberHomePage extends StatefulWidget {
 }
 
 class _MemberHomePageState extends State<_MemberHomePage> {
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
   String _formatDuration(Duration d) {
     return '${d.inMinutes.toString().padLeft(2, '0')}:'
         '${(d.inSeconds % 60).toString().padLeft(2, '0')}';
@@ -137,8 +146,25 @@ class _MemberHomePageState extends State<_MemberHomePage> {
     context.read<GetUserNameBloc>().add(GetUserNameEvent());
     context.read<ExerciseGetRecentBloc>().add((ExerciseGetRecentEvent()));
     context.read<GetAnthroRecentBloc>().add(AnthroGetRecentEvent());
+    _syncPendingLocalData();
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      results,
+    ) {
+      if (mounted && !results.contains(ConnectivityResult.none)) {
+        _syncPendingLocalData();
+      }
+    });
+  }
+
+  void _syncPendingLocalData() {
     context.read<SendAnhroBloc>().add(AnthroSyncPending());
-    //context.read<SendExerciseBloc>().add(ExerciseSyncPending());
+    context.read<SendExerciseBloc>().add(ExerciseSyncPending());
+  }
+
+  @override
+  void dispose() {
+    _connectivitySubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -146,7 +172,6 @@ class _MemberHomePageState extends State<_MemberHomePage> {
     return GradientBackground(
       // colors: [context.colors.onPrimary, context.colors.background],
       // stops: [0, 0.3],
-
       child: Scaffold(
         backgroundColor: Colors.transparent,
 
@@ -195,15 +220,16 @@ class _MemberHomePageState extends State<_MemberHomePage> {
               //     }
               //   }
               // ),
-
-              //BlocListener<SendExerciseBloc, ExerciseState>(
-              //  listener: (context, state) {
-              //    if(state is ExerciseSent){
-              //      ScaffoldMessenger.of(context).showSnackBar(
-              //        SnackBar(content: Text('Actividad física compartida con Salud ULV')));
-              //    }
-              //  }
-              //),
+              BlocListener<SendExerciseBloc, ExerciseState>(
+                listener: (context, state) {
+                  if (state is ExerciseSent) {
+                    CustomSnackBar.showSuccess(
+                      context,
+                      'Actividades físicas sincronizadas con Salud ULV',
+                    );
+                  }
+                },
+              ),
             ],
 
             child: SingleChildScrollView(
@@ -242,7 +268,11 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                 },
                                 child: Column(
                                   children: [
-                                    InitialsAvatar(firstName: state.name[0], lastName: state.name[1], size: context.iconSize.xl + 20,),
+                                    InitialsAvatar(
+                                      firstName: state.name[0],
+                                      lastName: state.name[1],
+                                      size: context.iconSize.xl + 20,
+                                    ),
                                     // CustomTextWidget(label: 'Perfil', fontSize: context.fontsSize.caption),
                                   ],
                                 ),
@@ -268,9 +298,9 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                             return Column(
                               children: [
                                 // SizedBox(height: context.spacing.md),
-
                                 CustomTextWidget(
-                                  label: "¿Quieres ver tus actividades recientes?",
+                                  label:
+                                      "¿Quieres ver tus actividades recientes?",
                                   fontSize: context.fontsSize.body,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -293,7 +323,13 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                 //     ),
                                 //   ),
                                 // ),
-                                CustomTextWidget(label: 'Desliza a la derecha para comenzar una actividad', fontSize: context.fontsSize.caption, icon: Icons.arrow_right, iconSize: context.iconSize.xl,),
+                                CustomTextWidget(
+                                  label:
+                                      'Desliza a la derecha para comenzar una actividad',
+                                  fontSize: context.fontsSize.caption,
+                                  icon: Icons.arrow_right,
+                                  iconSize: context.iconSize.xl,
+                                ),
                               ],
                             );
                           }
@@ -317,8 +353,8 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                     fontSize: context.fontsSize.body,
                                     fontWeight: FontWeight.w700,
                                   ),
-                                  // SizedBox(width: context.spacing.xxl,),
 
+                                  // SizedBox(width: context.spacing.xxl,),
                                   SimpleButton(
                                     label: "Ver más",
                                     // color: Colors.transparent,
@@ -352,27 +388,28 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                               ),
 
                               // SizedBox(height: context.spacing.md),
-
                               GestureDetector(
                                 onLongPress: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const WalkRecordsPage())),
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const WalkRecordsPage(),
+                                  ),
+                                ),
                                 child: AutoScrollAnimation(
                                   // enabled: true,
                                   // speed: 10,
-                                
                                   builder: (context, controller) => CustomListView(
                                     controller: controller,
                                     orientation: .horizontal,
                                     scrollable: true,
+
                                     // spacing: 34,
                                     // runSpacing: 34,
-                                
                                     widgets: [
                                       GridDataTile(
-                                        icon: FontAwesomeIcons.personWalkingDashedLineArrowRight,
+                                        icon: FontAwesomeIcons
+                                            .personWalkingDashedLineArrowRight,
                                         label: "Pasos",
                                         data: walk.steps!.toStringAsFixed(0),
                                         // sufix: 'm',
@@ -384,7 +421,7 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                         data: walk.distance!.toStringAsFixed(2),
                                         sufix: 'm',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.stopwatch,
                                         label: "Duración",
@@ -392,7 +429,7 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                         data: _formatDuration(walk.duration!),
                                         sufix: '',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.fireFlameCurved,
                                         label: "Calorias quemadas",
@@ -400,23 +437,22 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                             .toStringAsFixed(2),
                                         sufix: 'cal',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.mountain,
                                         label: "Elevación ganada",
-                                        data: walk.elevationGain!.toStringAsFixed(
-                                          2,
-                                        ),
+                                        data: walk.elevationGain!
+                                            .toStringAsFixed(2),
                                         sufix: 'm',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.timeline,
                                         label: "Ritmo",
                                         data: walk.avgPace!.toStringAsFixed(2),
                                         sufix: 'min/km',
                                       ),
-                                
+
                                       // GridDataTile(
                                       //   icon: FontAwesomeIcons.shoePrints,
                                       //   label: "Pasos por minuto",
@@ -426,7 +462,9 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                       GridDataTile(
                                         icon: FontAwesomeIcons.personWalking,
                                         label: "Pasos por minuto",
-                                        data: walk.avgCadence!.toStringAsFixed(2),
+                                        data: walk.avgCadence!.toStringAsFixed(
+                                          2,
+                                        ),
                                         sufix: '',
                                       ),
                                     ],
@@ -455,7 +493,6 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                             return Column(
                               children: [
                                 // SizedBox(height: context.spacing.md),
-
                                 CustomTextWidget(
                                   label:
                                       "¿Quieres ver tus antropométricos recientes?",
@@ -463,16 +500,16 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                   fontWeight: FontWeight.w700,
                                 ),
                                 SizedBox(height: context.spacing.md),
+
                                 // CustomTextWidget(
                                 //   label:
                                 //       "Agrega una caminata visualizar tu progreso personal",
                                 //   fontSize: context.fontsSize.body,
                                 // ),
                                 // SizedBox(height: context.spacing.lg),
-
                                 SimpleButton(
                                   label: "Agregar antropométricos",
-                                  textColor: context.colors.textSecondary,
+                                  textColor: context.colors.onSecondary,
                                   color: context.colors.secondary,
                                   onPressed: () => Navigator.push(
                                     context,
@@ -499,34 +536,33 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                     fontSize: context.fontsSize.body,
                                     fontWeight: FontWeight.w700,
                                   ),
-                                  // SizedBox(width: context.spacing.xxl,),
 
+                                  // SizedBox(width: context.spacing.xxl,),
                                   SimpleButton(
-                                    
-                                      label: "Ver más",
-                                      fontSize: context.fontsSize.details,
+                                    label: "Ver más",
+                                    fontSize: context.fontsSize.details,
                                     color: context.colors.surface,
                                     // borderColor: context.colors.textPrimary,
-                                    onPressed:() => Navigator.push(
+                                    onPressed: () => Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
                                             const AnthroRecordsPage(),
                                       ),
                                     ),
-                                    ),
-                                  
+                                  ),
                                 ],
                               ),
 
                               // SizedBox(height: context.spacing.md),
-
                               GestureDetector(
                                 onLongPress: () => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const AnthroRecordsPage())),
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const AnthroRecordsPage(),
+                                  ),
+                                ),
                                 child: AutoScrollAnimation(
                                   // enabled: true,
                                   // speed: 10,
@@ -540,7 +576,7 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                         data: "${(state.data!.height) / 100}",
                                         sufix: 'm',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.weightScale,
                                         iconColor: context.colors.secondary,
@@ -549,7 +585,7 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                         data: state.data!.weight.toString(),
                                         sufix: 'kg',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.dumbbell,
                                         iconColor: context.colors.secondary,
@@ -557,7 +593,7 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                         data: state.data!.smm.toString(),
                                         sufix: 'kg',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.weightHanging,
                                         iconColor: context.colors.secondary,
@@ -565,7 +601,7 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                         data: state.data!.fatMass.toString(),
                                         sufix: 'kg',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.percent,
                                         iconColor: context.colors.secondary,
@@ -574,7 +610,7 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                             .toString(),
                                         sufix: '%',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.weightScale,
                                         iconColor: context.colors.secondary,
@@ -582,7 +618,7 @@ class _MemberHomePageState extends State<_MemberHomePage> {
                                         data: state.data!.bmi.toString(),
                                         sufix: 'kg/m²',
                                       ),
-                                
+
                                       GridDataTile(
                                         icon: FontAwesomeIcons.rulerHorizontal,
                                         iconColor: context.colors.secondary,

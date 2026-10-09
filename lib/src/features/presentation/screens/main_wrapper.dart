@@ -14,14 +14,12 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_stat
 import 'package:salud_ulv_app/src/features/presentation/bloc/bottom_bar_bloc/bottom_bar_bloc.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/exercise%20tracking/exercise_tracking_page.dart';
 // import 'package:salud_ulv_app/src/features/presentation/screens/groups/join_group_page.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/groups/member_group_main_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/home/home_admin.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/home/home_member.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/profile/profile_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/records/main_records_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/shadows.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
-import 'package:salud_ulv_app/src/core/models/roles.dart';
 
 class MainWrapper extends StatelessWidget {
   const MainWrapper({super.key});
@@ -109,32 +107,34 @@ class _MainWrapperState extends State<_MainWrapper> {
           );
         }
 
-        debugPrint('In screen ${state.toString()} [--------------------------DEBUG--------------------------]');
+        debugPrint(
+          'In screen ${state.toString()} [--------------------------DEBUG--------------------------]',
+        );
 
         if (state is CheckAuthenticated) {
-            final tabs = tabsForRole(state.role);
-            final showFab = state.role == UserRole.member;
+          final tabs = tabsForRole(state.role);
+          final showFab = state.role == UserRole.member;
 
-            return Scaffold(
-              backgroundColor: context.colors.background,
-              bottomNavigationBar: _mainWrapperBottomNavBar(
-                context,
-                tabs,
-                showFab,
-              ),
+          return Scaffold(
+            backgroundColor: context.colors.background,
+            bottomNavigationBar: _mainWrapperBottomNavBar(
+              context,
+              tabs,
+              showFab,
+            ),
 
-              body: _mainWrapperBody(tabs),
-            );      
+            body: _mainWrapperBody(tabs),
+          );
         }
-        if(state is Unauthenticated){
+        if (state is Unauthenticated) {
           return const Scaffold(
             body: Center(child: Text('Could not load your account.')),
           );
         }
 
         // debugPrint('Navigador bar user: ${state.role} /////////////////////////////////');
-       return Center(child: Text('An error happened, sorry.'));
-      }
+        return Center(child: Text('An error happened, sorry.'));
+      },
     );
   }
 
@@ -154,6 +154,14 @@ class _MainWrapperState extends State<_MainWrapper> {
     required IconData filledIcon,
   }) {
     final isSelected = context.watch<BottomBarBloc>().state == page;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selectedBackground = isDark
+        ? context.colors.onTertiary
+        : context.colors.primaryContainer;
+    final selectedForeground = isDark
+        ? context.colors.textPrimary
+        : context.colors.onPrimaryContainer;
+    final unselectedForeground = context.colors.onTertiary;
 
     return Expanded(
       child: GestureDetector(
@@ -171,9 +179,9 @@ class _MainWrapperState extends State<_MainWrapper> {
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOutCubic,
           margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: isSelected ? context.colors.onTertiary : Colors.transparent,
+            color: isSelected ? selectedBackground : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
             boxShadow: isSelected ? context.shadows.smBoxShadow : null,
           ),
@@ -184,23 +192,27 @@ class _MainWrapperState extends State<_MainWrapper> {
             children: [
               Icon(
                 isSelected ? filledIcon : defaultIcon,
-                color: isSelected
-                    ? context.colors.textPrimary
-                    : context.colors.textSecondary,
+                color: isSelected ? selectedForeground : unselectedForeground,
                 size: 24,
               ),
               const SizedBox(height: 2),
 
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.aBeeZee(
-                  color: isSelected
-                      ? context.colors.textPrimary
-                      : context.colors.textSecondary,
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: GoogleFonts.aBeeZee(
+                      color: isSelected
+                          ? selectedForeground
+                          : unselectedForeground,
+                      fontSize: 10,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                  ),
                 ),
               ),
             ],

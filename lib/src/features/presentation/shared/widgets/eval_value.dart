@@ -29,7 +29,8 @@ class AnthroValueIndicator extends StatelessWidget {
   AnthroStatus get _status {
     if (value < range.min) return AnthroStatus.low;
     if (value > range.max) return AnthroStatus.high;
-    return AnthroStatus.normal; // shouldn't occur if only alert values are passed in
+    return AnthroStatus
+        .normal; // shouldn't occur if only alert values are passed in
   }
 
   @override
@@ -42,8 +43,7 @@ class AnthroValueIndicator extends StatelessWidget {
     final statusColor = switch (status) {
       AnthroStatus.low => lowColor ?? context.colors.low,
       AnthroStatus.high => highColor ?? context.colors.danger,
-      // AnthroStatus.normal => normalColor ?? Colors.green,
-      AnthroStatus.normal => Colors.green,
+      AnthroStatus.normal => colors.success,
     };
 
     final statusIcon = switch (status) {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // import 'package:flutter_ruler_picker/flutter_ruler_picker.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:salud_ulv_app/src/core/usecase/anthropometrics/save_usecase.dart';
 import 'package:salud_ulv_app/src/core/data/DTOs/anthro_dto.dart';
 import 'package:salud_ulv_app/src/core/data/source/token/current_user_service.dart';
@@ -9,14 +8,11 @@ import 'package:salud_ulv_app/src/core/data/source/local/sqflite/anthro_repo.dar
 import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_bloc.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_state.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/home/home_member.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/main_wrapper.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/helpers/input_validators.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/containers.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/input_fields.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/ruler_picker.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/snackbar.dart';
@@ -50,13 +46,41 @@ class _RegisterAnthroPageState extends State<_RegisterAnthroPage> {
   // late final RulerPickerController _heightController;
 
   final _formKey = GlobalKey<FormState>();
-  final _heightController = RulerPickerController(min: 150, max: 200, initialValue: 170);
-  final _weightController = RulerPickerController(min: 40, max: 150, initialValue: 70);
-  final _smmController = RulerPickerController(min: 20, max: 50, initialValue: 25);
-  final _fatMassController = RulerPickerController(min: 0, max: 15, initialValue: 7);
-  final _bodyFatPercentController = RulerPickerController(min: 5, max: 40, initialValue: 22);
-  final _bmiController = RulerPickerController(min: 15, max: 40, initialValue: 22);
-  final _whrController = RulerPickerController(min: 0.5, max: 1.5, initialValue: 1);
+  final _heightController = RulerPickerController(
+    min: 150,
+    max: 200,
+    initialValue: 170,
+  );
+  final _weightController = RulerPickerController(
+    min: 40,
+    max: 150,
+    initialValue: 70,
+  );
+  final _smmController = RulerPickerController(
+    min: 20,
+    max: 50,
+    initialValue: 25,
+  );
+  final _fatMassController = RulerPickerController(
+    min: 0,
+    max: 15,
+    initialValue: 7,
+  );
+  final _bodyFatPercentController = RulerPickerController(
+    min: 5,
+    max: 40,
+    initialValue: 22,
+  );
+  final _bmiController = RulerPickerController(
+    min: 15,
+    max: 40,
+    initialValue: 22,
+  );
+  final _whrController = RulerPickerController(
+    min: 0.5,
+    max: 1.5,
+    initialValue: 1,
+  );
 
   @override
   void dispose() {
@@ -76,13 +100,12 @@ class _RegisterAnthroPageState extends State<_RegisterAnthroPage> {
         SaveAnthroEvent(
           AnthropometricsDTO(
             height: _heightController.value.toDouble(),
-            weight:  _weightController.value.toDouble(),
-            smm:  _smmController.value.toDouble(),
-            fatMass:  _fatMassController.value.toDouble(),
-            bodyFatPercentage:
-                 _bodyFatPercentController.value.toDouble(),
-            bmi:  _bmiController.value.toDouble(),
-            whr:  _whrController.value.toDouble(),
+            weight: _weightController.value.toDouble(),
+            smm: _smmController.value.toDouble(),
+            fatMass: _fatMassController.value.toDouble(),
+            bodyFatPercentage: _bodyFatPercentController.value.toDouble(),
+            bmi: _bmiController.value.toDouble(),
+            whr: _whrController.value.toDouble(),
           ).toDomain(),
         ),
       );
@@ -94,7 +117,6 @@ class _RegisterAnthroPageState extends State<_RegisterAnthroPage> {
     return GradientBackground(
       // colors: [context.colors.background, context.colors.background, context.colors.tertiary],
       // stops: [0, 0.35, 1],
-
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: context.colors.background,
@@ -153,7 +175,6 @@ class _RegisterAnthroPageState extends State<_RegisterAnthroPage> {
 
                           BackgroundContainer(
                             // color: context.colors.secondary,
-
                             child: Column(
                               children: [
                                 // CustomTextFormField(
@@ -180,7 +201,6 @@ class _RegisterAnthroPageState extends State<_RegisterAnthroPage> {
                                   controller: _heightController,
                                   suffix: ' cm',
                                   title: 'Altura',
-                                  
                                 ),
                                 SizedBox(height: context.spacing.lg),
 
@@ -213,10 +233,8 @@ class _RegisterAnthroPageState extends State<_RegisterAnthroPage> {
                                   suffix: ' %',
                                   title: 'Porcentaje de grasa',
                                   step: 0.1,
-                                  
                                 ),
                                 SizedBox(height: context.spacing.lg),
-
 
                                 NumericRulerPicker(
                                   controller: _bmiController,
@@ -233,8 +251,6 @@ class _RegisterAnthroPageState extends State<_RegisterAnthroPage> {
                                   step: 0.1,
                                 ),
                                 SizedBox(height: context.spacing.lg),
-
-                                
                               ],
                             ),
                           ),
@@ -244,8 +260,8 @@ class _RegisterAnthroPageState extends State<_RegisterAnthroPage> {
                             label: 'Guardar',
                             fullWidth: true,
                             fontSize: context.fontsSize.body,
-                            textColor: context.colors.background,
-                            color: context.colors.onSecondary,
+                            textColor: context.colors.onSecondary,
+                            color: context.colors.secondary,
                             onPressed: () => _onSubmit(context),
                           ),
                           SizedBox(height: context.spacing.md),

@@ -187,7 +187,7 @@ class GridDataTile extends StatelessWidget {
               if (icon != null) ...[
                 FaIcon(
                   icon,
-                  color: iconColor ?? colors.onPrimary,
+                  color: iconColor ?? colors.secondary,
                   size: context.iconSize.lg,
                 ),
                 SizedBox(width: spacing.md),
@@ -287,7 +287,7 @@ class GridDataTileTrasparent extends StatelessWidget {
                     TextSpan(
                       text: data,
                       style: TextStyle(
-                        color: colors.onPrimary,
+                        color: colors.secondary,
                         fontWeight: FontWeight.w700,
                         fontSize: context.fontsSize.display,
                       ),
@@ -296,7 +296,7 @@ class GridDataTileTrasparent extends StatelessWidget {
                       TextSpan(
                         text: ' $sufix',
                         style: TextStyle(
-                          color: colors.onPrimary,
+                          color: colors.secondary,
                           fontWeight: FontWeight.w500,
                           fontSize: context.fontsSize.caption,
                         ),
@@ -320,14 +320,6 @@ class GridDataTileTrasparent extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
 
 class MetricSummaryCard extends StatelessWidget {
   const MetricSummaryCard({
@@ -405,14 +397,14 @@ class MetricSummaryCard extends StatelessWidget {
                 Icon(
                   icon,
                   size: context.iconSize.sm,
-                  color: color ?? colors.onPrimary,
+                  color: color ?? colors.secondary,
                 ),
                 SizedBox(width: spacing.xs),
               ],
               CustomTextWidget(
                 label: title,
                 fontSize: context.fontsSize.caption,
-                color: color ?? colors.onPrimary,
+                color: color ?? colors.secondary,
                 fontWeight: FontWeight.w600,
               ),
             ],
@@ -421,8 +413,14 @@ class MetricSummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _MetricStat(title: 'Total', value: _fmt(metric.sum, totalDecimals)),
-              _MetricStat(title: 'Prom.', value: _fmt(metric.average, averageDecimals)),
+              _MetricStat(
+                title: 'Total',
+                value: _fmt(metric.sum, totalDecimals),
+              ),
+              _MetricStat(
+                title: 'Prom.',
+                value: _fmt(metric.average, averageDecimals),
+              ),
               _MetricStat(title: 'Mín.', value: _fmt(metric.min, minDecimals)),
               _MetricStat(title: 'Máx.', value: _fmt(metric.max, maxDecimals)),
             ],
@@ -432,8 +430,6 @@ class MetricSummaryCard extends StatelessWidget {
     );
   }
 }
-
-
 
 class DurationMetricCard extends StatelessWidget {
   const DurationMetricCard({
@@ -489,14 +485,14 @@ class DurationMetricCard extends StatelessWidget {
                 Icon(
                   icon,
                   size: context.iconSize.sm,
-                  color: color ?? colors.onPrimary,
+                  color: color ?? colors.secondary,
                 ),
                 SizedBox(width: spacing.xs),
               ],
               CustomTextWidget(
                 label: title,
                 fontSize: context.fontsSize.caption,
-                color: color ?? colors.onPrimary,
+                color: color ?? colors.secondary,
                 fontWeight: FontWeight.w600,
               ),
             ],
@@ -505,10 +501,22 @@ class DurationMetricCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _MetricStat(title: 'Total', value: formatDurationFromSeconds(metric.sum)),
-              _MetricStat(title: 'Prom.', value: formatDurationFromSeconds(metric.average)),
-              _MetricStat(title: 'Mín.', value: formatDurationFromSeconds(metric.min)),
-              _MetricStat(title: 'Máx.', value: formatDurationFromSeconds(metric.max)),
+              _MetricStat(
+                title: 'Total',
+                value: formatDurationFromSeconds(metric.sum),
+              ),
+              _MetricStat(
+                title: 'Prom.',
+                value: formatDurationFromSeconds(metric.average),
+              ),
+              _MetricStat(
+                title: 'Mín.',
+                value: formatDurationFromSeconds(metric.min),
+              ),
+              _MetricStat(
+                title: 'Máx.',
+                value: formatDurationFromSeconds(metric.max),
+              ),
             ],
           ),
         ],
@@ -516,7 +524,6 @@ class DurationMetricCard extends StatelessWidget {
     );
   }
 }
-
 
 class _MetricStat extends StatelessWidget {
   const _MetricStat({required this.title, required this.value});
@@ -540,7 +547,7 @@ class _MetricStat extends StatelessWidget {
           CustomTextWidget(
             label: title,
             fontSize: context.fontsSize.caption,
-            color: colors.onPrimary.withAlpha(225),
+            color: colors.textSecondary,
             fontWeight: FontWeight.normal,
           ),
         ],

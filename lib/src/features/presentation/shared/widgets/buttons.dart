@@ -4,6 +4,7 @@ import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/shadows.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
+
 // import 'package:salud_ulv_app/src/features/presentation/themes/fonts.dart';
 // import 'package:salud_ulv_app/src/features/presentation/themes/dark_theme.dart';
 // // import 'package:salud_ulv_app/src/features/presentation/themes/themes.dart';
@@ -14,7 +15,12 @@ class SelectFieldButton extends StatelessWidget {
   final void Function()? onTap;
   // final Function action;
 
-  const SelectFieldButton({super.key, required this.fieldsName, required this.fields, required this.onTap});
+  const SelectFieldButton({
+    super.key,
+    required this.fieldsName,
+    required this.fields,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,20 +28,14 @@ class SelectFieldButton extends StatelessWidget {
 
     return ListView.builder(
       itemCount: fields.length,
-      itemBuilder: (context, index){
-        final field = fields[index];
+      itemBuilder: (context, index) {
         final fieldName = fieldsName[index];
 
-        return ListTile(
-          title: Text(fieldName),
-          onTap: onTap,
-        );
-      });
+        return ListTile(title: Text(fieldName), onTap: onTap);
+      },
+    );
   }
 }
-
-
-
 
 class SimpleButton extends StatelessWidget {
   const SimpleButton({
@@ -48,7 +48,7 @@ class SimpleButton extends StatelessWidget {
     this.textColor,
     this.fullWidth = false,
     this.maxLines = 1,
-    this.icon
+    this.icon,
   });
 
   final String? label;
@@ -68,6 +68,8 @@ class SimpleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final backgroundColor = color ?? colors.primary;
+    final foregroundColor = textColor ?? colors.foregroundFor(backgroundColor);
 
     final button = Material(
       color: Colors.transparent,
@@ -80,26 +82,24 @@ class SimpleButton extends StatelessWidget {
             vertical: context.spacing.md - 6,
           ),
           decoration: BoxDecoration(
-            color: color ?? colors.primary,
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(context.spacing.radiusLg),
             border: Border.all(color: borderColor ?? colors.border),
             boxShadow: context.shadows.smBoxShadow,
           ),
-          child: 
-          icon != null ? 
-          Icon(icon, size: context.iconSize.md,)
-          :
-          Text(
-            label ?? '',
-            textAlign: TextAlign.center,
-            maxLines: maxLines,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: textColor ?? colors.textPrimary,
-              fontWeight: FontWeight.w500,
-              fontSize: fontSize ?? context.fontsSize.caption,
-            ),
-          ),
+          child: icon != null
+              ? Icon(icon, size: context.iconSize.md, color: foregroundColor)
+              : Text(
+                  label ?? '',
+                  textAlign: TextAlign.center,
+                  maxLines: maxLines,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: foregroundColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: fontSize ?? context.fontsSize.caption,
+                  ),
+                ),
         ),
       ),
     );
@@ -111,10 +111,6 @@ class SimpleButton extends StatelessWidget {
         : IntrinsicWidth(child: button);
   }
 }
-
-
-
-
 
 class IconTextTile extends StatelessWidget {
   const IconTextTile({
@@ -134,7 +130,7 @@ class IconTextTile extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
   // final Color? color;
-    // final bool selected;
+  // final bool selected;
 
   @override
   Widget build(BuildContext context) {
@@ -159,18 +155,16 @@ class IconTextTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: colors.background,
             borderRadius: BorderRadius.circular(spacing.radiusMd),
-            border: Border.all(
-              color: colors.border,
-            ),
+            border: Border.all(color: colors.border),
           ),
-          
+
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
                 size: iconSize ?? context.iconSize.md,
-                color: colors.onSecondary,
+                color: colors.secondary,
               ),
               SizedBox(width: spacing.sm),
               Text(
@@ -188,9 +182,6 @@ class IconTextTile extends StatelessWidget {
     );
   }
 }
-
-
-
 
 class GridActionTile extends StatelessWidget {
   const GridActionTile({
@@ -246,7 +237,7 @@ class GridActionTile extends StatelessWidget {
                     Text(
                       label,
                       style: TextStyle(
-                        color: colors.textPrimary,
+                        color: colors.onPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
                       ),
@@ -255,13 +246,12 @@ class GridActionTile extends StatelessWidget {
                 ),
               ),
             ],
-          )
-        )
-      )
+          ),
+        ),
+      ),
     );
   }
 }
-
 
 class CustomIconButton extends StatelessWidget {
   const CustomIconButton({
@@ -314,7 +304,6 @@ class CustomIconButton extends StatelessWidget {
   }
 }
 
-
 // class SelectProgressTypeButton extends StatelessWidget {
 //   final String title;
 //   final Color bgColor;
@@ -352,7 +341,6 @@ class CustomIconButton extends StatelessWidget {
 //       ));
 //   }
 // }
-
 
 class CustomSelectableCard<T> extends StatelessWidget {
   const CustomSelectableCard({
@@ -408,7 +396,8 @@ class CustomSelectableCard<T> extends StatelessWidget {
         padding: EdgeInsets.all(spacing.md),
         decoration: BoxDecoration(
           color: selected
-              ? (selectedBackgroundColor ?? colors.primary.withValues(alpha: 0.08))
+              ? (selectedBackgroundColor ??
+                    colors.primary.withValues(alpha: 0.08))
               : (backgroundColor ?? colors.surface),
           borderRadius: BorderRadius.circular(spacing.radiusMd),
           border: Border.all(
@@ -432,7 +421,11 @@ class CustomSelectableCard<T> extends StatelessWidget {
                     color: selected ? indicatorColor : Colors.transparent,
                   ),
                   child: selected
-                      ? Icon(Icons.check, size: context.iconSize.sm, color: colors.onPrimary)
+                      ? Icon(
+                          Icons.check,
+                          size: context.iconSize.sm,
+                          color: colors.onPrimary,
+                        )
                       : null,
                 ),
                 SizedBox(width: spacing.sm),
@@ -444,7 +437,11 @@ class CustomSelectableCard<T> extends StatelessWidget {
                       Row(
                         children: [
                           if (icon != null) ...[
-                            Icon(icon, size: context.iconSize.sm, color: colors.textPrimary),
+                            Icon(
+                              icon,
+                              size: context.iconSize.sm,
+                              color: colors.textPrimary,
+                            ),
                             SizedBox(width: spacing.xs),
                           ],
                           Expanded(
@@ -463,7 +460,7 @@ class CustomSelectableCard<T> extends StatelessWidget {
                           label: info!,
                           fontSize: infoSize ?? context.fontsSize.caption,
                           textAlign: TextAlign.left,
-                          color: colors.onSecondary,
+                          color: colors.textSecondary,
                         ),
                       ],
                     ],

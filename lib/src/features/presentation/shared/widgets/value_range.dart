@@ -10,13 +10,7 @@ class ValueRangeIndicator extends StatelessWidget {
     required this.min,
     required this.max,
     this.title,
-    this.colors = const [
-      Colors.blue,
-      Colors.cyan,
-      Colors.green,
-      Colors.yellow,
-      Colors.red,
-    ],
+    this.colors,
     this.height = 12,
     this.markerSize = 22,
     this.borderRadius = 999,
@@ -24,7 +18,7 @@ class ValueRangeIndicator extends StatelessWidget {
     this.showMinMax = true,
     this.showThumbValue = false,
     this.fontSize,
-  }) : assert(colors.length == 5);
+  }) : assert(colors == null || colors.length == 5);
 
   final double value;
   final double min;
@@ -34,7 +28,7 @@ class ValueRangeIndicator extends StatelessWidget {
   final String? title;
 
   /// Cinco colores para el gradiente.
-  final List<Color> colors;
+  final List<Color>? colors;
 
   final double height;
   final double markerSize;
@@ -60,7 +54,17 @@ class ValueRangeIndicator extends StatelessWidget {
     final position = _normalizedValue;
     final textTheme = Theme.of(context).textTheme;
     final colorScheme = Theme.of(context).colorScheme;
-    final _fontSize = fontSize ?? context.fontsSize.body;
+    final appColors = context.colors;
+    final rangeColors =
+        colors ??
+        [
+          appColors.low,
+          appColors.tertiary,
+          appColors.success,
+          appColors.warning,
+          appColors.danger,
+        ];
+    final effectiveFontSize = fontSize ?? context.fontsSize.body;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -74,14 +78,14 @@ class ValueRangeIndicator extends StatelessWidget {
               if (title != null)
                 CustomTextWidget(
                   label: title!,
-                  fontSize: _fontSize,
+                  fontSize: effectiveFontSize,
                   fontWeight: .w900,
                 )
               else
                 const SizedBox.shrink(),
               CustomTextWidget(
                 label: value.toStringAsFixed(1),
-                fontSize: _fontSize,
+                fontSize: effectiveFontSize,
                 fontWeight: .w900,
               ),
             ],
@@ -110,7 +114,7 @@ class ValueRangeIndicator extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          colors: colors,
+                          colors: rangeColors,
                           stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
                         ),
                       ),
@@ -130,8 +134,11 @@ class ValueRangeIndicator extends StatelessWidget {
                           color: colorScheme.onSurface,
                           width: 2,
                         ),
-                        boxShadow: const [
-                          BoxShadow(blurRadius: 4, color: Colors.black26),
+                        boxShadow: [
+                          BoxShadow(
+                            blurRadius: 4,
+                            color: colorScheme.shadow.withValues(alpha: 0.2),
+                          ),
                         ],
                       ),
                       // Toggle para ver o no el valor dentro del círculo

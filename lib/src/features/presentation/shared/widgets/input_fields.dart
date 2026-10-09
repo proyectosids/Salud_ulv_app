@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -56,10 +54,7 @@ class CustomTextFormField extends StatelessWidget {
         maxLines: maxLines,
         enabled: enabled,
 
-        style: TextStyle(
-          color: colors.textPrimary,
-          fontSize: fontSize.caption,
-        ),
+        style: TextStyle(color: colors.textPrimary, fontSize: fontSize.caption),
 
         decoration: InputDecoration(
           labelText: label,
@@ -79,7 +74,7 @@ class CustomTextFormField extends StatelessWidget {
                   child: FaIcon(
                     prefixIcon,
                     size: iconSize.sm,
-                    color: colors.onSecondary,
+                    color: colors.secondary,
                   ),
                 )
               : null,
@@ -115,10 +110,6 @@ class CustomTextFormField extends StatelessWidget {
     );
   }
 }
-
-
-
-
 
 class CustomPasswordField extends StatefulWidget {
   const CustomPasswordField({
@@ -166,7 +157,7 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
           child: FaIcon(
             _obscureText ? FontAwesomeIcons.eye : FontAwesomeIcons.eyeSlash,
             size: iconSize.sm,
-            color: colors.onSecondary,
+            color: colors.secondary,
           ),
         ),
         onPressed: () {
@@ -178,12 +169,6 @@ class _CustomPasswordFieldState extends State<CustomPasswordField> {
     );
   }
 }
-
-
-
-
-
-
 
 class OtpInput extends StatefulWidget {
   const OtpInput({
@@ -269,9 +254,7 @@ class _OtpInputState extends State<OtpInput> {
         return Container(
           width: 48,
           height: 56,
-          decoration: BoxDecoration(
-            boxShadow: context.shadows.smBoxShadow
-          ),
+          decoration: BoxDecoration(boxShadow: context.shadows.smBoxShadow),
 
           child: KeyboardListener(
             focusNode: FocusNode(skipTraversal: true),
@@ -311,8 +294,6 @@ class _OtpInputState extends State<OtpInput> {
                   borderRadius: BorderRadius.circular(spacing.radiusMd),
                   borderSide: BorderSide(color: colors.primary, width: 2),
                 ),
-
-                
               ),
               onChanged: (value) => _handleChange(value, index),
             ),

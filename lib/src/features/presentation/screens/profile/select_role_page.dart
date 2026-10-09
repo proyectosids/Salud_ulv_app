@@ -8,11 +8,8 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profil
 import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profile_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profile_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/auth/splash_page.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/home/home_admin.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/home/home_member.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
 
 
 class SelectRolePage extends StatelessWidget {

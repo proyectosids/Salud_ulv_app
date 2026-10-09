@@ -1,6 +1,5 @@
 
 import 'package:flutter/rendering.dart';
-import 'package:salud_ulv_app/src/core/models/member.dart';
 import 'package:salud_ulv_app/src/core/models/roles.dart';
 import 'package:salud_ulv_app/src/core/models/user.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/user_repo.dart';

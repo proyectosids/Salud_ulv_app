@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/auth_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/user_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/services/token_repo.dart';
@@ -24,16 +23,12 @@ class DeleteAccUsecase implements IDeleteAccUseCase {
     if (token == null) return;
 
     final decodedToken = tokenRepo.decode(token);
-    debugPrint("Deleting account: $decodedToken");
     final data = decodedToken['user'];
     final email = data['email'];
     final uuid = data['userUUID'];
-    debugPrint("Deleting account $email");
-    debugPrint("Deleting account $uuid");
-
     if (email == null) return;
 
-    await authRepo.deleteAccount(email);
+    await authRepo.deleteAccount(email, token);
     await userLocalRepo.delete(uuid);
     await tokenStorageRepo.deleteToken();
   }

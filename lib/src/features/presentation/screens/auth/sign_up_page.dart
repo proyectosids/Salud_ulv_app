@@ -26,13 +26,10 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_even
 import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/auth/login_page.dart';
 // import 'package:salud_ulv_app/src/features/presentation/screens/auth/registry_info_page.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/home/home_member.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/containers.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
-import 'package:salud_ulv_app/src/testers/auth_repo_tester.dart';
-import 'package:salud_ulv_app/src/testers/check_connection_tester.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});
@@ -66,8 +63,7 @@ class SignUpPage extends StatelessWidget {
           create: (context) => SendOTPBloc(
             sendOTPUseCase: SendOtpUsecase(
               CheckConnection(),
-              OtpServices(),
-              TokenStorage(),
+              const OtpServices(),
             ),
           ),
         ),
@@ -76,7 +72,7 @@ class SignUpPage extends StatelessWidget {
           create: (context) => CheckOTPBloc(
             verifyOTPUseCase: VerifyOtpUsecase(
               CheckConnection(),
-              OtpServices(),
+              const OtpServices(),
               TokenStorage(),
             ),
           ),
@@ -131,6 +127,8 @@ class _SignUpPageState extends State<_SignUpPage> {
   // String? _dobError;
   int _typeID = 1;
   int _currentStep = 0;
+  bool _finalSubmissionInProgress = false;
+  bool _registrationCompleted = false;
 
   @override
   void dispose() {
@@ -157,7 +155,7 @@ class _SignUpPageState extends State<_SignUpPage> {
         return context.watch<CheckOTPBloc>().state is AuthLoading;
 
       case 2:
-        return context.watch<RegisterUserBloc>().state is AuthLoading;
+        return _finalSubmissionInProgress;
 
       default:
         return false;
@@ -181,7 +179,6 @@ class _SignUpPageState extends State<_SignUpPage> {
         SendOTPEvent(_emailController.text.trim()),
       );
     } else if (_currentStep == 1) {
-      debugPrint('${_otpController.text}, ${_emailController.text}');
       context.read<CheckOTPBloc>().add(
         CheckOPTEvent(_otpController.text.trim(), _emailController.text.trim()),
       );
@@ -196,8 +193,19 @@ class _SignUpPageState extends State<_SignUpPage> {
     }
   }
 
-  void _onFinalSubmit() async {
-    // if (!_formKey.currentState!.validate()) return;
+  void _onFinalSubmit() {
+    if (_finalSubmissionInProgress) return;
+
+    setState(() => _finalSubmissionInProgress = true);
+
+    final password = _passwordController.text.trim();
+
+    if (_registrationCompleted) {
+      context.read<LoginBloc>().add(
+        LoginEvent(input: _emailController.text.trim(), password: password),
+      );
+      return;
+    }
 
     final user = User(
       userCode: _userCodeController.text.trim(),
@@ -209,17 +217,8 @@ class _SignUpPageState extends State<_SignUpPage> {
       // gender: _genderController.text.trim()
     );
 
-    final password = _passwordController.text.trim();
-
     context.read<RegisterUserBloc>().add(
       RegisterEvent(user: user, password: password, typeID: _typeID),
-    );
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    // ignore: use_build_context_synchronously
-    context.read<LoginBloc>().add(
-      LoginEvent(input: _emailController.text.trim(), password: password),
     );
   }
 
@@ -227,11 +226,11 @@ class _SignUpPageState extends State<_SignUpPage> {
   Widget build(BuildContext context) {
     return GradientBackground(
       colors: [
-        context.colors.onSecondary,
+        context.colors.tertiary,
         context.colors.secondary,
         // context.colors.primary,
       ],
-      stops: [0 , 0.5],
+      stops: [0, 0.5],
 
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -243,7 +242,18 @@ class _SignUpPageState extends State<_SignUpPage> {
             listeners: [
               BlocListener<RegisterUserBloc, AuthState>(
                 listener: (context, state) {
+                  if (state is Authenticated) {
+                    _registrationCompleted = true;
+                    context.read<LoginBloc>().add(
+                      LoginEvent(
+                        input: _emailController.text.trim(),
+                        password: _passwordController.text.trim(),
+                      ),
+                    );
+                  }
+
                   if (state is AuthError) {
+                    setState(() => _finalSubmissionInProgress = false);
                     CustomSnackBar.showError(context, state.message);
                   }
                 },
@@ -260,7 +270,13 @@ class _SignUpPageState extends State<_SignUpPage> {
                   }
 
                   if (state is AuthError) {
-                    CustomSnackBar.showError(context, state.message);
+                    setState(() => _finalSubmissionInProgress = false);
+                    CustomSnackBar.showError(
+                      context,
+                      _registrationCompleted
+                          ? 'La cuenta fue creada, pero no se pudo iniciar sesión. Inténtalo nuevamente.'
+                          : state.message,
+                    );
                   }
                 },
               ),
@@ -368,7 +384,7 @@ class _SignUpPageState extends State<_SignUpPage> {
                             isLoading: isLoading,
 
                             onContinue: _onStepContinue,
-                            onCancel: _onStepCancel,
+                            onCancel: isLoading ? null : _onStepCancel,
 
                             stepContent: switch (_currentStep)
                             // ─────────────────────────────
@@ -378,14 +394,7 @@ class _SignUpPageState extends State<_SignUpPage> {
                               0 => Form(
                                 key: _formKeys[0],
                                 child: BlocBuilder<RegisterCredentialsBloc, AuthState>(
-                                  builder: (context, state) {
-                                    String? userCodeError;
-                                    String? emailError;
-
-                                    if (state is AuthError) {
-                                      emailError = state.message;
-                                    }
-
+                                  builder: (context, _) {
                                     return Column(
                                       children: [
                                         CustomTextFormField(
@@ -426,8 +435,10 @@ class _SignUpPageState extends State<_SignUpPage> {
                                           ),
                                         ),
 
-                                        SizedBox(height: context.spacing.sm,),
-                                        PasswordRequirementsChecklist(controller: _passwordController),
+                                        SizedBox(height: context.spacing.sm),
+                                        PasswordRequirementsChecklist(
+                                          controller: _passwordController,
+                                        ),
 
                                         // SizedBox(height: context.spacing.md),
 
@@ -458,18 +469,12 @@ class _SignUpPageState extends State<_SignUpPage> {
                               1 => Form(
                                 key: _formKeys[1],
                                 child: BlocBuilder<CheckOTPBloc, AuthState>(
-                                  builder: (context, state) {
-                                    String? otpError;
-
-                                    if (state is AuthError) {
-                                      otpError = state.message;
-                                    }
-
+                                  builder: (context, _) {
                                     return Column(
                                       // mainAxisAlignment: .start,
                                       // crossAxisAlignment: .start,
                                       mainAxisSize: .min,
-                                    
+
                                       children: [
                                         CustomTextWidget(
                                           label:
@@ -477,18 +482,18 @@ class _SignUpPageState extends State<_SignUpPage> {
                                           fontSize: context.fontsSize.caption,
                                           textAlign: .left,
                                         ),
-                                    
+
                                         SizedBox(height: context.spacing.md),
-                                    
+
                                         CustomTextWidget(
                                           label:
                                               "Si no encuentra el código, revise en la sección de Spam",
                                           fontSize: context.fontsSize.caption,
                                           textAlign: .left,
                                         ),
-                                    
+
                                         SizedBox(height: context.spacing.lg),
-                                    
+
                                         // CustomTextFormField(
                                         //   label: 'Código',
                                         //   controller: _otpController,
@@ -500,10 +505,13 @@ class _SignUpPageState extends State<_SignUpPage> {
                                         //   ),
                                         //   // errorText: otpError,
                                         // ),
-                                        OtpInput(length: 4 ,controller: _otpController,),
-                                    
+                                        OtpInput(
+                                          length: 4,
+                                          controller: _otpController,
+                                        ),
+
                                         SizedBox(height: context.spacing.md),
-                                    
+
                                         GestureDetector(
                                           onTap: () {
                                             context.read<SendOTPBloc>().add(
@@ -515,7 +523,7 @@ class _SignUpPageState extends State<_SignUpPage> {
                                           child: CustomTextWidget(
                                             label: "Reenviar código",
                                             fontSize: context.fontsSize.caption,
-                                            color: context.colors.onSecondary,
+                                            color: context.colors.secondary,
                                             textAlign: .right,
                                           ),
                                         ),
@@ -531,15 +539,7 @@ class _SignUpPageState extends State<_SignUpPage> {
                               2 => Form(
                                 key: _formKeys[2],
                                 child: BlocBuilder<RegisterUserBloc, AuthState>(
-                                  builder: (context, state) {
-                                    String? firstnameError;
-                                    String? surnameError;
-                                    String? lastnameError;
-
-                                    if (state is AuthError) {
-                                      firstnameError = state.message;
-                                    }
-
+                                  builder: (context, _) {
                                     return Column(
                                       children: [
                                         CustomTextFormField(
@@ -595,48 +595,48 @@ class _SignUpPageState extends State<_SignUpPage> {
                                               setState(() => _typeID = value!),
 
                                           child: StatefulBuilder(
-                                        builder: (context, setDialogState) {
-                                          return Row(
-                                            children: [
-                                              Expanded(
-                                                child: CustomSelectableCard(
-                                                  value: 1,
-                                                  groupValue: _typeID,
-                                                  onChanged: (value) {
-                                                    setState(
-                                                      () => _typeID =
-                                                          value,
-                                                    ); // updates page state
-                                                    setDialogState(
-                                                      () {},
-                                                    ); // tells the dialog to rebuild too
-                                                  },
-                                                  title: 'Empleado',
-                                                  info: 'Podrás unirte a tu área de trabajo y vicerrectoria',
-                                                ),
-                                              ),
-                                              SizedBox(
-                                                width: context.spacing.sm,
-                                              ),
-                                              Expanded(
-                                                child: CustomSelectableCard(
-                                                  value: 2,
-                                                  groupValue: _typeID,
-                                                  onChanged: (value) {
-                                                    setState(
-                                                      () => _typeID =
-                                                          value,
-                                                    );
-                                                    setDialogState(() {});
-                                                  },
-                                                  title: 'Estudiante',
-                                                  info: 'Podrás unirte a tu facultad o materia específica',
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      ),
+                                            builder: (context, setDialogState) {
+                                              return Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: CustomSelectableCard(
+                                                      value: 1,
+                                                      groupValue: _typeID,
+                                                      onChanged: (value) {
+                                                        setState(
+                                                          () => _typeID = value,
+                                                        ); // updates page state
+                                                        setDialogState(
+                                                          () {},
+                                                        ); // tells the dialog to rebuild too
+                                                      },
+                                                      title: 'Empleado',
+                                                      info:
+                                                          'Podrás unirte a tu área de trabajo y vicerrectoria',
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    width: context.spacing.sm,
+                                                  ),
+                                                  Expanded(
+                                                    child: CustomSelectableCard(
+                                                      value: 2,
+                                                      groupValue: _typeID,
+                                                      onChanged: (value) {
+                                                        setState(
+                                                          () => _typeID = value,
+                                                        );
+                                                        setDialogState(() {});
+                                                      },
+                                                      title: 'Estudiante',
+                                                      info:
+                                                          'Podrás unirte a tu facultad o materia específica',
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            },
+                                          ),
                                         ),
 
                                         SizedBox(height: context.spacing.md),

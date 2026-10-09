@@ -97,7 +97,7 @@ class CustomAlertDialog extends StatelessWidget {
             onPressed: onCancel ?? () => Navigator.of(context).pop(),
             child: Text(
               cancelLabel,
-              style: TextStyle(color: cancelColor ?? colors.onSecondary),
+              style: TextStyle(color: cancelColor ?? colors.textSecondary),
             ),
           ),
         TextButton(
@@ -113,9 +113,6 @@ class CustomAlertDialog extends StatelessWidget {
     );
   }
 }
-
-
-
 
 class CustomDialog extends StatelessWidget {
   const CustomDialog({
@@ -184,7 +181,7 @@ class CustomDialog extends StatelessWidget {
     final colors = context.colors;
     final spacing = context.spacing;
 
-    onTapedOK(Function onOkPressed){
+    onTapedOK(Function onOkPressed) {
       onOkPressed();
       Navigator.pop(context);
     }
@@ -223,7 +220,11 @@ class CustomDialog extends StatelessWidget {
                   if (showCloseButton)
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
-                      child: Icon(Icons.close, color: colors.danger.withAlpha(150), size: context.iconSize.md,),
+                      child: Icon(
+                        Icons.close,
+                        color: colors.danger.withAlpha(150),
+                        size: context.iconSize.md,
+                      ),
                     ),
                 ],
               ),
@@ -245,8 +246,8 @@ class CustomDialog extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: colors.onSecondary,
-                    foregroundColor: colors.textSecondary,
+                    backgroundColor: colors.secondary,
+                    foregroundColor: colors.onSecondary,
                     padding: EdgeInsets.symmetric(vertical: spacing.sm),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(spacing.radiusMd),

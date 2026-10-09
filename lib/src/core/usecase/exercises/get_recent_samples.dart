@@ -2,9 +2,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:salud_ulv_app/src/core/models/exercise_samples.dart';
-import 'package:salud_ulv_app/src/core/repositories/repos/excercise_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/exercise_sample_repo.dart';
-import 'package:salud_ulv_app/src/core/repositories/services/current_user_session_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/use-cases/excercise_usecases.dart';
 
 class GetSamplesUseCase implements IGetSamplesUseCase{

@@ -1,6 +1,3 @@
-
-
-import 'package:flutter/material.dart';
 import 'package:salud_ulv_app/src/core/models/exercise_samples.dart';
 import 'package:salud_ulv_app/src/core/models/exercise_summaries.dart';
 import 'package:salud_ulv_app/src/core/models/exercises.dart';
@@ -12,8 +9,6 @@ abstract class IExerciseTrackUseCase {
   double? get distance;
   Duration? get elapsed;
   double? get caloriesBurned;
-
-
 
   Future<void> start();
   void pause();
@@ -37,31 +32,28 @@ abstract class ILocationTrackable {
   Coordinates? get currentLocation; // Like the end position
 }
 
-
-// Structures for a shared use case, all for physical activities 
-
+// Structures for a shared use case, all for physical activities
 
 abstract class IGetRecentExerciseUseCase {
-  Future<IPhysicalActivity?> execute(); 
+  Future<IPhysicalActivity?> execute();
 }
 
 abstract class IGetSamplesUseCase {
   Future<List<IActivitySample>?> execute(String activityID);
 }
 
-abstract class IGetAllExerciseUseCase  {
-  Future<List<IPhysicalActivity>?> execute(); 
+abstract class IGetAllExerciseUseCase {
+  Future<List<IPhysicalActivity>?> execute();
 }
 
-abstract class IGetALlByFieldExerciseUseCase  {
-  Future<List<IPhysicalActivity>?> execute(String field); 
+abstract class IGetALlByFieldExerciseUseCase {
+  Future<List<IPhysicalActivity>?> execute(String field);
 }
 
 abstract class IGetExerciseSummary {
   Future<IExerciseSummary?> execute(SummaryPeriod period);
 }
 
-
-// abstract class ISendExerciseUseCase {
-//   Future<void> execute(PhysicalActivity);
-// }
+abstract class ISendExerciseUseCase {
+  Future<bool> execute();
+}

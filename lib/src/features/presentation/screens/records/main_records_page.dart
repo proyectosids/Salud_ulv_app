@@ -7,7 +7,6 @@ import 'package:salud_ulv_app/src/features/presentation/screens/records/exercise
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/containers.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/snackbar.dart';
 
 class MainProgressPage extends StatelessWidget {
   const MainProgressPage({super.key});

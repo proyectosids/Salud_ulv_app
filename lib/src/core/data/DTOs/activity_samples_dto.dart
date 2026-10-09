@@ -1,5 +1,4 @@
 import 'package:salud_ulv_app/src/core/models/exercise_samples.dart';
-import 'package:salud_ulv_app/src/core/models/exercises.dart';
 
 
 class ActivitySampleDTO {

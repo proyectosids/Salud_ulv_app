@@ -8,7 +8,6 @@ import 'package:salud_ulv_app/src/core/models/user.dart';
 import 'package:salud_ulv_app/src/core/usecase/auth/delete_acc_usecase.dart';
 import 'package:salud_ulv_app/src/core/usecase/auth/logout_usecase.dart';
 import 'package:salud_ulv_app/src/core/usecase/profile/can_change_roles_verifier.dart';
-import 'package:salud_ulv_app/src/core/usecase/profile/select_role_usecase.dart';
 // import 'package:salud_ulv_app/src/core/models/user.dart';
 import 'package:salud_ulv_app/src/core/usecase/profile/get_profile_info_usecase.dart';
 import 'package:salud_ulv_app/src/core/data/source/token/current_user_service.dart';
@@ -22,9 +21,7 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_stat
 import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profile_bloc.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profile_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/profile_bloc/profile_state.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/anthropometrics/register_anthro_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/auth/splash_page.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/profile/select_role_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/fomaters.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/launch_url.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
@@ -282,18 +279,17 @@ class _ProfileMainPageState extends State<_ProfileMainPage> {
                                         // paddingSize: context.spacing.sm,
                                       ),
 
-                                      if(member.gender != null) ...[
-                                      CustomTextWidget(
-                                        label: member.gender == 'male'
-                                            ? 'Masculino'
-                                            : 'Femenino',
-                                        fontSize: context.fontsSize.caption,
-                                        labelPrefix: 'Sexo: ',
-                                        // backgroundColor: context.colors.secondary.withAlpha(50),
-                                        // paddingSize: context.spacing.sm,
-                                      ),
-
-                                      ]
+                                      if (member.gender != null) ...[
+                                        CustomTextWidget(
+                                          label: member.gender == 'male'
+                                              ? 'Masculino'
+                                              : 'Femenino',
+                                          fontSize: context.fontsSize.caption,
+                                          labelPrefix: 'Sexo: ',
+                                          // backgroundColor: context.colors.secondary.withAlpha(50),
+                                          // paddingSize: context.spacing.sm,
+                                        ),
+                                      ],
                                     ],
                                   ),
                                   SizedBox(height: context.spacing.sm),
@@ -451,6 +447,15 @@ class _ProfileMainPageState extends State<_ProfileMainPage> {
                           SizedBox(height: context.spacing.lg),
 
                           CustomTextWidget(
+                            label: 'Apariencia',
+                            fontSize: context.fontsSize.title,
+                            textAlign: .left,
+                          ),
+                          SizedBox(height: context.spacing.sm),
+                          const _ThemeModeSelector(),
+                          SizedBox(height: context.spacing.lg),
+
+                          CustomTextWidget(
                             label: "Cuenta",
                             fontSize: context.fontsSize.title,
                             textAlign: .left,
@@ -516,6 +521,78 @@ class _ProfileMainPageState extends State<_ProfileMainPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ThemeModeSelector extends StatelessWidget {
+  const _ThemeModeSelector();
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = ThemeControllerScope.of(context);
+    final modeLabel = switch (controller.mode) {
+      ThemeMode.system => 'Usar configuración del dispositivo',
+      ThemeMode.light => 'Modo claro',
+      ThemeMode.dark => 'Modo oscuro',
+    };
+
+    return PopupMenuButton<ThemeMode>(
+      tooltip: 'Cambiar apariencia',
+      initialValue: controller.mode,
+      onSelected: controller.setMode,
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: ThemeMode.system,
+          child: _ThemeModeOption(
+            icon: Icons.brightness_auto_rounded,
+            label: 'Sistema',
+          ),
+        ),
+        PopupMenuItem(
+          value: ThemeMode.light,
+          child: _ThemeModeOption(
+            icon: Icons.light_mode_rounded,
+            label: 'Claro',
+          ),
+        ),
+        PopupMenuItem(
+          value: ThemeMode.dark,
+          child: _ThemeModeOption(
+            icon: Icons.dark_mode_rounded,
+            label: 'Oscuro',
+          ),
+        ),
+      ],
+      child: Semantics(
+        button: true,
+        label: 'Apariencia: $modeLabel',
+        child: ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(switch (controller.mode) {
+            ThemeMode.system => Icons.brightness_auto_rounded,
+            ThemeMode.light => Icons.light_mode_rounded,
+            ThemeMode.dark => Icons.dark_mode_rounded,
+          }, color: context.colors.secondary),
+          title: const Text('Tema de la aplicación'),
+          subtitle: Text(modeLabel),
+          trailing: const Icon(Icons.expand_more_rounded),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeModeOption extends StatelessWidget {
+  const _ThemeModeOption({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [Icon(icon, size: 20), const SizedBox(width: 12), Text(label)],
     );
   }
 }

@@ -1,72 +1,5 @@
-
-
 import 'dart:async';
-import 'dart:math';
-import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
-
-
-
-// Step counter algorithm
-double smoothMagnitude = 0.0;
-DateTime lastTimeStamp = DateTime.now();
-
-
-bool countStep({
-  required List<double> accelerometerData,
-}) 
-
-{
-  double alpha = 0.8;
-  double dynamicThreshold = 2.5;
-  final int stepCoolDownSeconds = 300;
-  bool step = false;
-
-  final x = accelerometerData[0];
-  final y = accelerometerData[1];
-  final z = accelerometerData[2];
-
-
-  final magnitude = sqrt(x * x + y * y + z * z);
-
-  smoothMagnitude = (alpha * smoothMagnitude) + ((1-alpha) * magnitude);
-
-  // debugPrint('Last Magnitude: $smoothMagnitude');
-  final double avg = accelerometerData.reduce((a,b) => a + b) / accelerometerData.length;
-
-
-  final double stepDynamicThreshold = avg + dynamicThreshold;
-  // debugPrint('Dynamic threshold: $stepDynamicThreshold');
-  final now = DateTime.now();
-
-  // debugPrint('Difference: ${now.difference(lastStepTime).inMilliseconds}');
-  final bool stepCoolDown = now.difference(lastTimeStamp).inMilliseconds > stepCoolDownSeconds; 
-  // debugPrint('Step cool down: $stepCoolDown');
-
-  if((smoothMagnitude > stepDynamicThreshold ) && stepCoolDown) {
-
-    // debugPrint(now.difference(lastTimePoint).inMilliseconds.toString());
-    // debugPrint('Step cool down: $stepCoolDown');
-        // debugPrint('Step detected');
-        lastTimeStamp = now;
-        step = true;
-        return step; // step detected
-    }
-
-    debugPrint(
-  'ACCEL '
-  'x=${x.toStringAsFixed(3)} '
-  'y=${y.toStringAsFixed(3)} '
-  'z=${z.toStringAsFixed(3)} '
-  'magnitude=${magnitude.toStringAsFixed(3)} '
-  'smooth=${smoothMagnitude.toStringAsFixed(3)} '
-  'threshold=${stepDynamicThreshold.toStringAsFixed(3)} '
-  'step=$step',
-);
-
-  return step; // no step
-}
-
 
 // DateTime? lastStepTime;
 
@@ -146,10 +79,6 @@ bool countStep({
 //   return false;
 // }
 
-
-
-
-
 // double smoothMagnitude = 0.0;
 // double baseline = 0.0;
 
@@ -204,7 +133,6 @@ bool countStep({
 //   'step=$step',
 // );
 
-
 //   if (signal > threshold && enoughTime) {
 //     lastStepTime = now;
 //     step = true;
@@ -214,36 +142,28 @@ bool countStep({
 //   return step;
 // }
 
-
-
-
-
-
 // Calculate calories
 double calculateCalories({
   required Duration elapsed,
   required double weightKg,
   required double met,
 }) {
-
   // Needs the divition
-  final minutes = elapsed.inSeconds / 60.0; 
+  final minutes = elapsed.inSeconds / 60.0;
   return (minutes * met * weightKg) / 200;
 }
 
-
-double calculateSpeed(){
+double calculateSpeed() {
   return 0.0;
 }
 
-
 // Average calculator
 double avgCalculator(List<num> values) {
-  if(values.isEmpty) return 0;
+  if (values.isEmpty) return 0;
 
   num sum = 0;
 
-  for(num x in values) {
+  for (num x in values) {
     sum += x;
   }
 
@@ -253,9 +173,9 @@ double avgCalculator(List<num> values) {
 double calculateCaloriesBurned(Duration time, double met, double bodyWeight) {
   // Time needs to be in minutes for the standard MET formula
   final double minutes = time.inSeconds / 60.0;
-  
+
   final double calories = (minutes * met * bodyWeight) / 200;
-  
+
   return calories;
 }
 
@@ -270,26 +190,24 @@ double maxValue(Iterable<double> values, {double fallback = 0}) {
 
 double calculateStepsPerMinute(int steps, Duration time) {
   final double minutes = time.inSeconds / 60.0;
-  
+
   if (minutes <= 0) return 0.0;
-  
+
   final double stepsPerMinute = steps / minutes;
-  
+
   return stepsPerMinute;
 }
 
-
 double valueByTime(List<num> values, int timeInSeconds) {
-  if(values.isEmpty) return 0.0;
+  if (values.isEmpty) return 0.0;
 
   final total = values.fold<num>(0, (a, b) => a + b);
   final minutes = values.length / timeInSeconds;
 
-  if(minutes == 0) return 0;
+  if (minutes == 0) return 0;
 
   return total / minutes;
 }
-
 
 double totalElevationGain(List<num> elevationDeltas) {
   if (elevationDeltas.isEmpty) return 0.0;
@@ -300,19 +218,14 @@ double totalElevationGain(List<num> elevationDeltas) {
       .toDouble();
 }
 
-
-
 // Calculate cadence
 double calculateCadence(int movementDelta, Duration duration) {
-
   if (duration.inSeconds <= 0 || movementDelta <= 0) {
     return 0;
   }
 
   return movementDelta / duration.inSeconds;
 }
-
-
 
 double calculatePace(Duration duration, double distanceMeters) {
   if (duration.inSeconds <= 0 || distanceMeters <= 0) return 0;
@@ -326,18 +239,10 @@ double calculatePace(Duration duration, double distanceMeters) {
   return pace;
 }
 
-
-
 // Reductor of stream speed
 Stream<T> streamSpeedReductor<T>(Stream<T> stream, int pMilliseconds) {
   return stream.throttleTime(Duration(milliseconds: pMilliseconds));
 }
-
-
-
-
-
-
 
 // General timer for exercises
 class ExerciseTimer {

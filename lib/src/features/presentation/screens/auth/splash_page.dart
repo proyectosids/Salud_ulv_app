@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:salud_ulv_app/src/core/models/admin.dart';
-import 'package:salud_ulv_app/src/core/models/member.dart';
-import 'package:salud_ulv_app/src/core/models/roles.dart';
 import 'package:salud_ulv_app/src/core/usecase/auth/check_auth_usecase.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/auth/login_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/auth/sign_up_page.dart';
@@ -13,7 +10,6 @@ import 'package:salud_ulv_app/src/core/data/source/local/sqflite/user_repo.dart'
 import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_bloc.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/main_wrapper.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
@@ -83,9 +79,11 @@ class _SplashPageState extends State<_SplashPage> {
       body: VideoBackgroundContainer(
         videoAsset: 'assets/videos/splash_video1.mp4',
         overlayOpacity: 0.65,
-        colors: [Colors.black.withAlpha(100),
-              Colors.black.withAlpha(200),
-              Colors.black,],
+        colors: [
+          Colors.black.withAlpha(100),
+          Colors.black.withAlpha(200),
+          Colors.black,
+        ],
         stops: [0.4, 0.5, 0.7],
 
         child: SafeArea(
@@ -128,7 +126,7 @@ class _SplashPageState extends State<_SplashPage> {
                                 text: "Salud ULV",
                                 colors: [
                                   context.colors.primary,
-                                  context.colors.onSecondary,
+                                  context.colors.secondary,
                                 ],
                                 fontSize: context.fontsSize.display,
                                 fontWeight: FontWeight.w900,
@@ -174,9 +172,8 @@ class _SplashPageState extends State<_SplashPage> {
                             },
                           ),
                           SizedBox(height: context.spacing.sm),
-                          
+
                           // SizedBox(width: context.spacing.md),
-                          
                           SimpleButton(
                             label: "Inicia sesión",
                             fontSize: context.fontsSize.body,

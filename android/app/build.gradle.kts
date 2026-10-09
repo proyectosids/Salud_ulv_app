@@ -14,6 +14,20 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val releaseSigningKeys = listOf("keyAlias", "keyPassword", "storeFile", "storePassword")
+val hasReleaseSigning = keystorePropertiesFile.exists() &&
+    releaseSigningKeys.all { !keystoreProperties.getProperty(it).isNullOrBlank() }
+val releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+
+if (releaseBuildRequested && !hasReleaseSigning) {
+    throw GradleException(
+        "Release signing is not configured. Copy android/key.properties.example " +
+            "to android/key.properties and provide the production keystore values."
+    )
+}
+
 android {
     namespace = "com.azaiulv.salud_ulv_app"
     compileSdk = flutter.compileSdkVersion
@@ -30,7 +44,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.azaiulv.salud_ulv_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -41,7 +54,7 @@ android {
     }
 
     signingConfigs {
-        create("release") {
+        if (hasReleaseSigning) create("release") {
             keyAlias = keystoreProperties.getProperty("keyAlias")
             keyPassword = keystoreProperties.getProperty("keyPassword")
             storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
@@ -51,9 +64,9 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("release")
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }

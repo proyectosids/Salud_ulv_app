@@ -175,7 +175,7 @@ class CustomDataChart extends StatelessWidget {
               // [TITLE] valueData text style
               child: CustomTextWidget(
                 label: valueData!,
-                color: colors.onSecondary, // [COLOR] pill text
+                color: colors.secondary, // [COLOR] pill text
                 fontWeight: FontWeight.w700,
                 fontSize: fontSize.body,
               ),
@@ -444,7 +444,7 @@ class CustomDataChart extends StatelessWidget {
 
             // [COLOR] LINE COLOR: gradient across the line, left to right
             gradient: LinearGradient(
-              colors: [colors.onPrimary, colors.secondary, colors.onSecondary],
+              colors: [colors.primary, colors.secondary, colors.tertiary],
             ),
 
             // [COLOR] Dots on the line (only if pointStyle.showDots is true)
@@ -476,7 +476,7 @@ class CustomDataChart extends StatelessWidget {
                         colors.secondary.withValues(
                           alpha: 0.35,
                         ), // top: stronger
-                        colors.onPrimary.withValues(
+                        colors.tertiary.withValues(
                           alpha: 0.15,
                         ), // top: stronger
                         colors.primary.withValues(
@@ -559,7 +559,7 @@ class CustomDataChart extends StatelessWidget {
                 // [COLOR] Outline color/width, only used when fill is false
                 borderSide: fill
                     ? BorderSide.none
-                    : BorderSide(color: colors.onPrimary, width: 2),
+                    : BorderSide(color: colors.secondary, width: 2),
               ),
             ],
           );

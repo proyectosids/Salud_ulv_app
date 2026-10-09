@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:salud_ulv_app/src/core/models/exercises.dart';
+import 'package:salud_ulv_app/src/core/models/exercise_categories.dart';
 import 'package:salud_ulv_app/src/core/models/exercise_samples.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/excercise_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/exercise_sample_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/sensors_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/services/current_user_session_repo.dart';
-import 'package:salud_ulv_app/src/core/repositories/services/location_permission.dart';
 import 'package:salud_ulv_app/src/core/services/error_handlers.dart';
 import 'package:salud_ulv_app/src/core/services/exercise_services.dart';
 import 'package:salud_ulv_app/src/core/repositories/use-cases/excercise_usecases.dart';
@@ -19,18 +19,15 @@ class CyclingActivityUsecase
   final ICurrentUserSession currentUserSession;
 
   final IGeolocator geolocatorSensor;
-  final ILocationPermissionService locationPermissionService;
 
   CyclingActivityUsecase(
     this.exerciseLocalRepo,
     this.aerobicSampleRepo,
     this.currentUserSession,
     this.geolocatorSensor,
-    this.locationPermissionService,
   );
 
-  // TODO: ajusta al categoryID real de Cycling en ActivityCategory
-  static const int _categoryID = 1;
+  static const int _categoryID = ExerciseCategoryIds.cycling;
 
   // MET aproximado para ciclismo a ritmo moderado (~8.0)
   static const double _cyclingMet = 8.0;
@@ -56,8 +53,6 @@ class CyclingActivityUsecase
 
   Timer? _snapshotTimer;
   bool _snapshotBusy = false;
-  bool _isPaused = false;
-
   double _lastSnapshotDistance = 0.0;
   double _lastSnapshotElevation = 0.0;
   double _lastSnapshotCaloriesBurned = 0.0;
@@ -114,11 +109,7 @@ class CyclingActivityUsecase
 
   @override
   Future<void> start() async {
-    // 1. Validar todo ANTES de crear un ID.
-    await locationPermissionService.request();
-    final locationGranted = await locationPermissionService.isGranted();
-    if (!locationGranted) return;
-
+    // Los permisos se validan una sola vez en ExerciseTrackingBloc.
     final userUUID = await currentUserSession.getCurrentUserUUID();
     if (userUUID == null) return;
 
@@ -127,7 +118,6 @@ class CyclingActivityUsecase
     _userUUID = userUUID;
     debugPrint('CyclingID: $activityID');
 
-    _isPaused = false;
     _lastSnapshotDistance = 0.0;
     _lastSnapshotElevation = 0.0;
     _lastSnapshotCaloriesBurned = 0.0;
@@ -136,7 +126,7 @@ class CyclingActivityUsecase
     // 3. Crear la fila en BD
     await exerciseLocalRepo.setIDs(activityID, userUUID, _categoryID, date);
 
-    await geolocatorSensor.start(3, 4, 1);
+    await geolocatorSensor.start(3, 4, 1, maxExpectedSpeed: 22);
 
     _timer.start();
     _startSnapshotTimer();
@@ -144,7 +134,6 @@ class CyclingActivityUsecase
 
   @override
   void pause() {
-    _isPaused = true;
     geolocatorSensor.pause();
     _timer.pause();
     _snapshotTimer?.cancel();
@@ -152,7 +141,6 @@ class CyclingActivityUsecase
 
   @override
   void resume() {
-    _isPaused = false;
     geolocatorSensor.resume();
     _timer.resume();
     _startSnapshotTimer();
@@ -166,8 +154,6 @@ class CyclingActivityUsecase
 
     geolocatorSensor.reset();
     _timer.reset();
-    _isPaused = false;
-
     _lastSnapshotDistance = 0.0;
     _lastSnapshotElevation = 0.0;
     _lastSnapshotCaloriesBurned = 0.0;
@@ -249,14 +235,15 @@ class CyclingActivityUsecase
         .whereType<double>()
         .toList();
 
-        final speedList = sampleData
+    final speedList = sampleData
         .map((sample) => sample.speed)
         .whereType<double>()
         .where((value) => value.isFinite)
         .toList();
 
-    final elevationGain =
-        elevationList.isEmpty ? 0.0 : totalElevationGain(elevationList);
+    final elevationGain = elevationList.isEmpty
+        ? 0.0
+        : totalElevationGain(elevationList);
 
     // Desnivel positivo promedio por kilómetro (m/km).
     final distanceKm = currentDistance / 1000;

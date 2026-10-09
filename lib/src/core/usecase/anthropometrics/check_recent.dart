@@ -9,14 +9,17 @@ class CheckRecentAnthroUseCase implements ICheckRecentAnthroUseCase {
   final ICurrentUserSession currentUserSession;
   final IMemberLocalRepo memberLocalRepo;
 
-  const CheckRecentAnthroUseCase(this.anthroRepo, this.currentUserSession, this.memberLocalRepo);
+  const CheckRecentAnthroUseCase(
+    this.anthroRepo,
+    this.currentUserSession,
+    this.memberLocalRepo,
+  );
 
   // @override
   // Future<(Map<String, ({num max, num min})>?, Map<String, num>?)> execute() async {
   @override
   Future<(Map<String, ({num max, num min})>?, Map<String, num>?)>
   execute() async {
-
     Map<String, ({num max, num min})> ranges;
 
     const Map<String, ({num max, num min})> anthroNormalValuesMen = {
@@ -40,20 +43,14 @@ class CheckRecentAnthroUseCase implements ICheckRecentAnthroUseCase {
 
     final userUUID = await currentUserSession.getCurrentUserUUID();
     if (userUUID == null) return (null, null);
-    debugPrint(userUUID);
-
     final gender = await memberLocalRepo.getGender(userUUID);
     // if(gender == null) return (null, null);
 
-
-    if(gender == 'male' || gender == null){
+    if (gender == 'male' || gender == null) {
       ranges = anthroNormalValuesMen;
     } else {
       ranges = anthroNormalValuesWomen;
     }
-
-
-
 
     final anthroData = await anthroRepo.getRecent(userUUID);
     debugPrint(anthroData.toString());
@@ -68,9 +65,6 @@ class CheckRecentAnthroUseCase implements ICheckRecentAnthroUseCase {
       'ICC': anthroData.whr,
     };
     debugPrint(dataMap.toString());
-
-
-
 
     final Map<String, num> alertValues = {};
 
@@ -88,9 +82,9 @@ class CheckRecentAnthroUseCase implements ICheckRecentAnthroUseCase {
 
       if (value < range.min || value > range.max) {
         alertValues[field] = value;
-      debugPrint(alertValues.toString());
-      //   ranges[field] = range;
-      // debugPrint(range.toString());
+        debugPrint(alertValues.toString());
+        //   ranges[field] = range;
+        // debugPrint(range.toString());
       }
     }
 

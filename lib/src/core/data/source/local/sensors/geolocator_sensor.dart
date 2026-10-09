@@ -1,42 +1,45 @@
 import 'dart:async';
-import 'package:flutter/widgets.dart';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/sensors_repo.dart';
-
-// import 'package:salud_ulv_app/src/features/data/source/local/services/location_permition.dart';
+import 'package:salud_ulv_app/src/core/services/motion_tracking/location_track_filter.dart';
 
 class GeolocatorSensor implements IGeolocator {
-  StreamSubscription? _sub;
-  Position? _lastPosition;
+  StreamSubscription<Position>? _subscription;
+  LocationTrackFilter? _filter;
 
-  double _distance = 0.0;
-  double _speed = 0.0;
-  double _latitude = 0.0;
-  double _longitude = 0.0;
-  double _elevation = 0.0;
-  bool _hasMovement = false;
+  double _latitude = 0;
+  double _longitude = 0;
   double? _startLatitude;
   double? _startLongitude;
 
   @override
-  double get speed => _speed;
+  double get speed => _filter?.speed ?? 0;
+
   @override
-  double get distance => _distance;
+  double get distance => _filter?.distance ?? 0;
+
   @override
   double get latitude => _latitude;
+
   @override
   double get longitude => _longitude;
+
   @override
-  double get elevation => _elevation;
+  double get elevation => _filter?.elevationGain ?? 0;
+
   @override
-  bool get hasMovement => _hasMovement;
+  bool get hasMovement =>
+      _filter?.motionStateAt(DateTime.now()) == LocationMotionState.moving;
+
+  @override
+  bool get hasReliableFix => _filter?.hasReliableFixAt(DateTime.now()) ?? false;
 
   @override
   double? get startLatitude => _startLatitude;
+
   @override
   double? get startLongitude => _startLongitude;
-
-
 
   LocationAccuracy setAccuracyLevel(int accuracyLevel) {
     switch (accuracyLevel) {
@@ -53,156 +56,102 @@ class GeolocatorSensor implements IGeolocator {
     }
   }
 
-
-
   @override
   Future<Coordinates?> getCurrentLocation() async {
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-
     if (!serviceEnabled) {
       throw Exception('Location services are disabled.');
     }
 
-    var permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-
-      if (permission == LocationPermission.denied) {
-        throw Exception('Location permission was denied.');
-      }
+    final permission = await Geolocator.checkPermission();
+    if (permission != LocationPermission.always &&
+        permission != LocationPermission.whileInUse) {
+      return null;
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception('Location permission was permanently denied.');
+    Position? position;
+    try {
+      position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+    } on TimeoutException {
+      // GPS does not require Internet, but a fresh fix can take longer indoors.
+      // Use the OS-provided last fix so an offline map opens in the last known
+      // area instead of falling back to a generic country-level position.
+      position = await Geolocator.getLastKnownPosition();
     }
 
-    final position = await Geolocator.getCurrentPosition();
-
+    if (position == null) return null;
     return Coordinates(
       latitude: position.latitude,
       longitude: position.longitude,
     );
   }
 
-
-
   @override
   Future<void> start(
     double minMovementDistance,
     int accuracyLevel,
-    int distanceFilter,
-  ) async {
-    _startStream(
-      _getStream(accuracyLevel, distanceFilter),
-      minMovementDistance,
+    int distanceFilter, {
+    double maxExpectedSpeed = 15,
+  }) async {
+    await _subscription?.cancel();
+    _filter = LocationTrackFilter(
+      minimumDisplacement: minMovementDistance,
+      maximumAccuracy: 25,
+      maximumSpeed: maxExpectedSpeed,
     );
-  }
-
-  Stream<Position> _getStream(int accuracyLevel, int distanceFilter) {
-    return Geolocator.getPositionStream(
+    final stream = Geolocator.getPositionStream(
       locationSettings: LocationSettings(
         accuracy: setAccuracyLevel(accuracyLevel),
         distanceFilter: distanceFilter,
       ),
     );
+    _subscription = stream.listen(_onPosition);
   }
 
+  void _onPosition(Position position) {
+    final update = _filter?.update(
+      LocationTrackPoint(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        altitude: position.altitude,
+        accuracy: position.accuracy,
+        timestamp: position.timestamp,
+        reportedSpeed: position.speed,
+      ),
+    );
+    if (update?.accepted != true) return;
 
-
-  void _startStream(
-    Stream<Position> positionStream,
-    double minMovementDistance,
-  ) {
-    _sub = positionStream.listen((Position position) {
-      if (_lastPosition == null) {
-        _startLatitude = position.latitude;
-        _startLongitude = position.longitude;
-      }
-
-      if (_lastPosition != null) {
-        final delta = Geolocator.distanceBetween(
-          _lastPosition!.latitude,
-          _lastPosition!.longitude,
-          position.latitude,
-          position.longitude,
-        );
-
-        // _distance += delta;
-
-        _hasMovement = delta >= minMovementDistance;
-
-        if (delta >= minMovementDistance) {
-          _distance += delta;
-          _speed = position.speed;
-          _hasMovement = true;
-        } else {
-          _hasMovement = false;
-        }
-
-        // final noiseFloor = (position.accuracy + _lastPosition!.accuracy).clamp(
-        //   minMovementDistance,
-        //   15.0,
-        // ); // nunca menos que tu mínimo, tope razonable de 15m
-
-        // if (delta >= noiseFloor) {
-        //   _distance += delta;
-        //   _speed = position.speed;
-        //   _hasMovement = true;
-        // } else {
-        //   _hasMovement = false;
-        //   // OJO: no sumes delta a _distance aquí, es ruido.
-        // }
-
-              // Siempre acumula distancia real -> pace/distancia quedan
-      // // suaves, cada snapshot refleja lo que realmente avanzaste
-      // // en esos 5 segundos, sin ráfagas artificiales.
-      // _distance += delta;
-      // _speed = position.speed;
-
-      // // El umbral de precisión SOLO decide si cuenta como
-      // // "movimiento activo" para el gate de pasos del acelerómetro
-      // // -- no afecta la distancia acumulada.
-      // final noiseFloor = (position.accuracy + _lastPosition!.accuracy)
-      //     .clamp(minMovementDistance, 15.0);
-      // _hasMovement = delta >= noiseFloor;
-
-        final altitudeDelta = position.altitude - _lastPosition!.altitude;
-        if (altitudeDelta > 1.5) _elevation += altitudeDelta;
-      }
-      debugPrint(position.toString());
-      _lastPosition = position;
-      _latitude = position.latitude;
-      _longitude = position.longitude;
-    });
+    // Expose and persist only coordinates accepted by the accuracy/speed
+    // filter. Raw fixes can temporarily be (0, 0), stale, or impossible jumps.
+    _startLatitude ??= position.latitude;
+    _startLongitude ??= position.longitude;
+    _latitude = position.latitude;
+    _longitude = position.longitude;
   }
 
+  @override
+  void pause() => _subscription?.pause();
 
   @override
-  void pause() => _sub?.pause();
-
-
-  @override
-  void resume() => _sub?.resume();
-
-
+  void resume() => _subscription?.resume();
 
   @override
   void stop() {
-    _sub?.cancel();
-    _sub = null;
+    _subscription?.cancel();
+    _subscription = null;
   }
-
-
 
   @override
   void reset() {
-    _distance = 0.0;
-    _speed = 0.0;
-    _elevation = 0.0;
-    _lastPosition = null;
-    _hasMovement = false;
-
+    _filter?.reset();
+    _filter = null;
+    _latitude = 0;
+    _longitude = 0;
     _startLatitude = null;
     _startLongitude = null;
   }

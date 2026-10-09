@@ -206,7 +206,7 @@ class InitialsAvatar extends StatelessWidget {
       child: Text(
         _initials,
         style: TextStyle(
-          color: textColor ?? colors.onSecondary,
+          color: textColor ?? colors.secondary,
           fontSize: size * 0.4,
           fontWeight: fontWeight,
         ),

@@ -11,14 +11,12 @@ class CustomSnackBar {
     Duration duration = const Duration(seconds: 4),
     SnackBarAction? action,
   }) {
-
-
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: backgroundColor ?? context.colors.onSecondary,
+        backgroundColor: backgroundColor ?? context.colors.secondary,
         duration: duration,
         behavior: .floating,
         shape: RoundedRectangleBorder(

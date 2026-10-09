@@ -2,20 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-// import 'package:path/path.dart';
-import 'package:salud_ulv_app/src/core/usecase/exercises/trackers/walk_usecase.dart';
 import 'package:salud_ulv_app/src/core/usecase/location/get_current_position.dart';
-import 'package:salud_ulv_app/src/core/data/source/local/sensors/accelerometer_sensor.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sensors/geolocator_sensor.dart';
-import 'package:salud_ulv_app/src/core/data/source/token/current_user_service.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/data_tiles.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/exercise_traker_widgets.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/expandable_sheet.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/listviews.dart';
-import 'package:salud_ulv_app/src/features/services/location_permition.dart';
-// import 'package:salud_ulv_app/src/core/data/source/local/sqflite/walk_samples_repo.dart';
-import 'package:salud_ulv_app/src/core/data/source/local/sqflite/walk_repo.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_tracking_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_tracking_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_tracking_bloc.dart';
@@ -23,6 +13,7 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/location_bloc/locat
 import 'package:salud_ulv_app/src/features/presentation/bloc/location_bloc/location_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/location_bloc/location_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
+import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/map.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/snackbar.dart';
 
@@ -33,19 +24,6 @@ class ExerciseTrackerMainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        // BlocProvider(
-        //   create: (context) => ExerciseTrackingBloc(
-        //     usecase: WalkActivityUsecase(
-        //       WalkRepo(),
-        //       WalkSamplesRepo(),
-        //       CurrentUserSession(),
-        //       AccelerometerSensor(),
-        //       GeolocatorSensor(),
-        //       LocationPermissionService(),
-        //     ),
-        //   ),
-        // ),
-
         BlocProvider(
           create: (context) => GetCurrentLocationBloc(
             currentLocation: GetUserCurrentPosition(GeolocatorSensor()),
@@ -71,10 +49,11 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
   //     '${d.inMinutes.toString().padLeft(2, '0')}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 
   final MapController _mapController = MapController();
+  LatLng? _initialLocation;
   LatLng? startPoint;
   LatLng? endPoint;
   final points = <LatLng>[];
-  bool _satellite = true;
+  bool _satellite = false;
 
   void _userCurrentLocation(BuildContext context) {
     final state = context.read<GetCurrentLocationBloc>().state;
@@ -110,40 +89,35 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
             listener: (context, state) {
               debugPrint('Puntos recorridos: $points');
 
-              if (state is TrackingExercise &&
-                  state.startLocation != null &&
-                  startPoint == null) {
-                debugPrint(
-                  'Error in start point ${state.startLocation!.latitude}, ${state.startLocation!.longitude}',
-                );
-
-                startPoint = LatLng(
-                  state.startLocation!.latitude,
-                  state.startLocation!.longitude,
-                );
-
-                // );
+              if (state is TrackingExercise) {
+                var routeChanged = false;
+                if (state.startLocation != null && startPoint == null) {
+                  startPoint = LatLng(
+                    state.startLocation!.latitude,
+                    state.startLocation!.longitude,
+                  );
+                  routeChanged = true;
+                }
 
                 if (state.currentLocation != null) {
                   final newPoint = LatLng(
                     state.currentLocation!.latitude,
                     state.currentLocation!.longitude,
                   );
-
                   final isNewPoint =
                       points.isEmpty ||
                       points.last.latitude != newPoint.latitude ||
                       points.last.longitude != newPoint.longitude;
-
                   if (isNewPoint) {
                     points.add(newPoint);
+                    routeChanged = true;
                   }
                 }
 
-                setState(() {});
+                if (routeChanged) setState(() {});
               }
 
-              if (state is ExerciseSaved && state.endLocation != null) {
+              if (state is ExerciseSaved) {
                 setState(() {
                   endPoint = LatLng(
                     state.endLocation.latitude,
@@ -158,6 +132,7 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
                 setState(() {
                   startPoint = null;
                   endPoint = null;
+                  points.clear();
                 });
               }
 
@@ -172,6 +147,22 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
               if (state is ExerciseError) {
                 CustomSnackBar.showError(context, state.message);
               }
+
+              if (state is ExercisePermissionsDenied) {
+                CustomSnackBar.show(
+                  context,
+                  message: state.message,
+                  backgroundColor: context.colors.danger,
+                  action: state.canOpenSettings
+                      ? SnackBarAction(
+                          label: 'Abrir ajustes',
+                          onPressed: () => context
+                              .read<ExerciseTrackingBloc>()
+                              .add(OpenExercisePermissionSettingsEvent()),
+                        )
+                      : null,
+                );
+              }
             },
           ),
         ],
@@ -185,24 +176,51 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
                     state.currentLocation.latitude,
                     state.currentLocation.longitude,
                   );
-
-                  if (_satellite) {
-                    _mapController.move(location, 18);
-                  }
-
-                  _mapController.move(location, 18);
+                  setState(() => _initialLocation = location);
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) _mapController.move(location, 18);
+                  });
                 }
 
                 if (state is LocationError) {
                   CustomSnackBar.showError(context, state.message);
                 }
               },
-              child: MapWidget(
-                startPoint: startPoint,
-                routePoints: points,
-                endPoint: endPoint,
-                mapController: _mapController,
-                satellite: _satellite,
+              child: BlocBuilder<GetCurrentLocationBloc, LocationState>(
+                builder: (context, locationState) {
+                  if (_initialLocation == null &&
+                      (locationState is LocationInitial ||
+                          locationState is LocationLoading)) {
+                    return ColoredBox(
+                      color: context.colors.background,
+                      child: const Center(child: CircularProgressIndicator()),
+                    );
+                  }
+
+                  if (_initialLocation == null) {
+                    return ColoredBox(
+                      color: context.colors.background,
+                      child: Center(
+                        child: SimpleButton(
+                          icon: Icons.my_location,
+                          label: 'Obtener ubicación',
+                          onPressed: () => context
+                              .read<GetCurrentLocationBloc>()
+                              .add(GetCurrentLocation()),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return MapWidget(
+                    initialCenter: _initialLocation,
+                    startPoint: startPoint,
+                    routePoints: points,
+                    endPoint: endPoint,
+                    mapController: _mapController,
+                    satellite: _satellite,
+                  );
+                },
               ),
             ),
 
@@ -259,7 +277,7 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
               Icons.layers,
               color: _satellite
                   ? context.colors.textPrimary
-                  : context.colors.onPrimary,
+                  : context.colors.secondary,
             ),
           ),
 

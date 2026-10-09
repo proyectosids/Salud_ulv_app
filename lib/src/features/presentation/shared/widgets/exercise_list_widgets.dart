@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:salud_ulv_app/src/core/models/exercises.dart';
@@ -7,7 +5,6 @@ import 'package:salud_ulv_app/src/features/presentation/shared/helpers/fomaters.
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/fonts_size.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
-
 
 class RecordListPaginator extends StatelessWidget {
   const RecordListPaginator({
@@ -40,7 +37,7 @@ class RecordListPaginator extends StatelessWidget {
             Icons.chevron_left_rounded,
             color: hasPrevious
                 ? colors.textPrimary
-                : colors.onSecondary.withValues(alpha: 0.3),
+                : colors.textSecondary.withValues(alpha: 0.45),
           ),
         ),
 
@@ -54,7 +51,7 @@ class RecordListPaginator extends StatelessWidget {
             CustomTextWidget(
               label: subtitle,
               fontSize: context.fontsSize.caption,
-              color: colors.onSecondary,
+              color: colors.textSecondary,
             ),
           ],
         ),
@@ -65,17 +62,13 @@ class RecordListPaginator extends StatelessWidget {
             Icons.chevron_right_rounded,
             color: hasNext
                 ? colors.textPrimary
-                : colors.onSecondary.withValues(alpha: 0.3),
+                : colors.textSecondary.withValues(alpha: 0.45),
           ),
         ),
       ],
     );
   }
 }
-
-
-
-
 
 class ActivityCard extends StatelessWidget {
   const ActivityCard({
@@ -92,35 +85,35 @@ class ActivityCard extends StatelessWidget {
   // ───────── Configuración por tipo ─────────
 
   FaIconData get _icon => switch (activity) {
-        Walk() => FontAwesomeIcons.personWalking,
-        Running() => FontAwesomeIcons.personRunning,
-        Cycling() => FontAwesomeIcons.personBiking,
-        _ => FontAwesomeIcons.dumbbell,
-      };
+    Walk() => FontAwesomeIcons.personWalking,
+    Running() => FontAwesomeIcons.personRunning,
+    Cycling() => FontAwesomeIcons.personBiking,
+    _ => FontAwesomeIcons.dumbbell,
+  };
 
   String get _label => switch (activity) {
-        Walk() => 'Caminata',
-        Running() => 'Carrera',
-        Cycling() => 'Ciclismo',
-        _ => 'Actividad',
-      };
+    Walk() => 'Caminata',
+    Running() => 'Carrera',
+    Cycling() => 'Ciclismo',
+    _ => 'Actividad',
+  };
 
   /// Estadísticas específicas del tipo, después de distancia y duración.
   List<_StatData> get _extraStats {
     final a = activity;
     return switch (a) {
       Walk() => [
-          _StatData(FontAwesomeIcons.shoePrints, '${a.steps ?? 0} pasos'),
-        ],
+        _StatData(FontAwesomeIcons.shoePrints, '${a.steps ?? 0} pasos'),
+      ],
       Running() => [
-          _StatData(FontAwesomeIcons.gaugeHigh, _formatPace(a.avgPace)),
-        ],
+        _StatData(FontAwesomeIcons.gaugeHigh, _formatPace(a.avgPace)),
+      ],
       Cycling() => [
-          _StatData(
-            FontAwesomeIcons.gaugeHigh,
-            '${((a.avgSpeed ?? 0) * 3.6).toStringAsFixed(1)} km/h',
-          ),
-        ],
+        _StatData(
+          FontAwesomeIcons.gaugeHigh,
+          '${((a.avgSpeed ?? 0) * 3.6).toStringAsFixed(1)} km/h',
+        ),
+      ],
       _ => const [],
     };
   }
@@ -177,7 +170,7 @@ class ActivityCard extends StatelessWidget {
                 ),
                 child: FaIcon(
                   _icon,
-                  color: colors.onPrimary,
+                  color: colors.secondary,
                   size: context.iconSize.md,
                 ),
               ),
@@ -190,7 +183,7 @@ class ActivityCard extends StatelessWidget {
                     Text(
                       _label,
                       style: textTheme.labelSmall?.copyWith(
-                        color: colors.onPrimary,
+                        color: colors.secondary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -206,7 +199,8 @@ class ActivityCard extends StatelessWidget {
                       spacing: spacing.md,
                       runSpacing: spacing.xs,
                       children: [
-                        for (final s in stats) _Stat(icon: s.icon, text: s.text),
+                        for (final s in stats)
+                          _Stat(icon: s.icon, text: s.text),
                       ],
                     ),
                   ],
@@ -229,7 +223,6 @@ class _StatData {
   const _StatData(this.icon, this.text);
 }
 
-
 class _Stat extends StatelessWidget {
   const _Stat({required this.icon, required this.text});
 
@@ -243,7 +236,7 @@ class _Stat extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FaIcon(icon, size: 14, color: context.colors.onPrimary),
+        FaIcon(icon, size: 14, color: context.colors.secondary),
         const SizedBox(width: 4),
         Text(
           text,

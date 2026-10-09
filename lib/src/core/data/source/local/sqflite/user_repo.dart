@@ -96,8 +96,6 @@ class UserLocalRepo implements IUsersLocalRepo, IUserLocalRepo {
       final db = await _db;
 
       final currentRoleModel = {'currentRole': currentRole};
-      debugPrint(userUUID);
-
       await db.update(
         'Users',
         currentRoleModel,
@@ -115,8 +113,6 @@ class UserLocalRepo implements IUsersLocalRepo, IUserLocalRepo {
     try {
       final db = await _db;
 
-      debugPrint('In get current roles: $userUUID');
-
       final result = await db.query(
         'Users',
         columns: ['roles'],
@@ -125,7 +121,6 @@ class UserLocalRepo implements IUsersLocalRepo, IUserLocalRepo {
       );
 
       if (result.isEmpty) {
-        debugPrint('No user found for uuid: $userUUID');
         return null;
       }
 
@@ -185,8 +180,6 @@ class UserLocalRepo implements IUsersLocalRepo, IUserLocalRepo {
     try {
       final db = await _db;
 
-      debugPrint('In get current role: $userUUID');
-
       final result = await db.query(
         'Users',
         columns: ['firstname', 'surname', 'lastname'],
@@ -195,7 +188,6 @@ class UserLocalRepo implements IUsersLocalRepo, IUserLocalRepo {
       );
 
       if (result.isEmpty) {
-        debugPrint('No user found for uuid: $userUUID');
         return null;
       }
 
@@ -206,8 +198,6 @@ class UserLocalRepo implements IUsersLocalRepo, IUserLocalRepo {
         row['surname'] as String? ?? '',
         row['lastname'] as String? ?? '',
       ];
-
-      debugPrint('In db: Getting names $names');
 
       return names;
     } catch (e) {

@@ -1,16 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:salud_ulv_app/src/core/models/exercises.dart';
+import 'package:salud_ulv_app/src/core/models/exercise_categories.dart';
 import 'package:salud_ulv_app/src/core/models/exercise_samples.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/excercise_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/exercise_sample_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/sensors_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/services/current_user_session_repo.dart';
-import 'package:salud_ulv_app/src/core/repositories/services/location_permission.dart';
 import 'package:salud_ulv_app/src/core/services/error_handlers.dart';
 import 'package:salud_ulv_app/src/core/services/exercise_services.dart';
 import 'package:salud_ulv_app/src/core/repositories/use-cases/excercise_usecases.dart';
 import 'package:salud_ulv_app/src/core/services/step_counter.dart';
+import 'package:salud_ulv_app/src/core/services/motion_tracking/location_track_filter.dart';
+import 'package:salud_ulv_app/src/core/services/motion_tracking/step_fusion_tracker.dart';
 import 'package:uuid/uuid.dart';
 
 class RunningActivityUsecase
@@ -21,7 +23,6 @@ class RunningActivityUsecase
 
   final IAccelerometer accelerometerSensor;
   final IGeolocator geolocatorSensor;
-  final ILocationPermissionService locationPermissionService;
 
   RunningActivityUsecase(
     this.exerciseLocalRepo,
@@ -29,20 +30,16 @@ class RunningActivityUsecase
     this.currentUserSession,
     this.accelerometerSensor,
     this.geolocatorSensor,
-    this.locationPermissionService,
   );
 
-  // TODO: ajusta al categoryID real de Running en ActivityCategory
-  static const int _categoryID = 1;
+  static const int _categoryID = ExerciseCategoryIds.running;
 
   // MET aproximado para correr (~9.8 a ritmo moderado)
   static const double _runningMet = 9.8;
   static const double _weightKg = 70;
 
-  // Límite superior para considerar que un "paso" detectado es real
-  // (m/s). Evita contar ruido del acelerómetro con el GPS casi en reposo
-  // o saltos de señal.
-  static const double _maxStepSpeed = 10.0;
+  static const double _maximumRunningSpeed = 8.5;
+  static const double _estimatedStrideMeters = 1.05;
 
   final ExerciseTimer _timer = ExerciseTimer();
 
@@ -50,6 +47,10 @@ class RunningActivityUsecase
   final int _instanceId = ++_instanceCount;
 
   final StepDetector _stepCounter = StepDetector();
+  final StepFusionTracker _stepFusion = StepFusionTracker(
+    minimumInterval: Duration(milliseconds: 220),
+    maximumInterval: Duration(milliseconds: 900),
+  );
 
   String? _activityID;
   String? _userUUID;
@@ -66,10 +67,9 @@ class RunningActivityUsecase
 
   Timer? _snapshotTimer;
   bool _snapshotBusy = false;
-  bool _isPaused = false;
-
   // Los pasos NO se guardan en Running, pero se necesitan para la cadencia.
   int _steps = 0;
+  double _fallbackDistance = 0;
 
   int _lastSnapshotSteps = 0;
   double _lastSnapshotDistance = 0.0;
@@ -86,13 +86,19 @@ class RunningActivityUsecase
   Duration? get elapsed => _timer.elapsed;
 
   @override
-  double? get distance => geolocatorSensor.distance;
+  double? get distance => geolocatorSensor.distance > _fallbackDistance
+      ? geolocatorSensor.distance
+      : _fallbackDistance;
 
   @override
   double? get caloriesBurned {
     final e = elapsed;
     if (e == null) return 0;
-    return calculateCalories(elapsed: e, weightKg: _weightKg, met: _runningMet.toDouble());
+    return calculateCalories(
+      elapsed: e,
+      weightKg: _weightKg,
+      met: _runningMet.toDouble(),
+    );
   }
 
   /// Velocidad instantánea en m/s (GPS).
@@ -130,11 +136,7 @@ class RunningActivityUsecase
 
   @override
   Future<void> start() async {
-    // 1. Validar todo ANTES de crear un ID.
-    await locationPermissionService.request();
-    final locationGranted = await locationPermissionService.isGranted();
-    if (!locationGranted) return;
-
+    // Los permisos se validan una sola vez en ExerciseTrackingBloc.
     final userUUID = await currentUserSession.getCurrentUserUUID();
     if (userUUID == null) return;
 
@@ -144,7 +146,9 @@ class RunningActivityUsecase
     debugPrint('RunningID: $activityID');
 
     _steps = 0;
-    _isPaused = false;
+    _fallbackDistance = 0;
+    _stepCounter.reset();
+    _stepFusion.reset();
     _lastSnapshotSteps = 0;
     _lastSnapshotDistance = 0.0;
     _lastSnapshotElevation = 0.0;
@@ -154,19 +158,39 @@ class RunningActivityUsecase
     // 3. Crear la fila en BD
     await exerciseLocalRepo.setIDs(activityID, userUUID, _categoryID, date);
 
-    await geolocatorSensor.start(3, 4, 1);
+    await geolocatorSensor.start(
+      2,
+      4,
+      1,
+      maxExpectedSpeed: _maximumRunningSpeed,
+    );
     await accelerometerSensor.start();
 
     final accelStream = streamSpeedReductor(accelerometerSensor.magnitude, 50);
 
     // Se cuentan pasos solo para calcular cadencia (pasos/min).
     _accelSub = accelStream.listen((raw) {
-      final step = _stepCounter.update(raw!);
+      final now = DateTime.now();
+      final candidate = _stepCounter.update(raw!, timestamp: now);
+      if (!candidate) return;
 
-      if (step &&
-          geolocatorSensor.hasMovement &&
-          geolocatorSensor.speed < _maxStepSpeed) {
-        _steps++;
+      final motionState = !geolocatorSensor.hasReliableFix
+          ? LocationMotionState.unavailable
+          : geolocatorSensor.hasMovement
+          ? LocationMotionState.moving
+          : LocationMotionState.stationary;
+      final result = _stepFusion.addCandidate(
+        timestamp: now,
+        motionState: motionState,
+        detectorConfidence: _stepCounter.confidence,
+      );
+      if (result.confirmedSteps > 0) {
+        _steps += result.confirmedSteps;
+        if (!geolocatorSensor.hasReliableFix) {
+          final gpsDistance = geolocatorSensor.distance;
+          if (_fallbackDistance < gpsDistance) _fallbackDistance = gpsDistance;
+          _fallbackDistance += result.confirmedSteps * _estimatedStrideMeters;
+        }
       }
     });
 
@@ -176,7 +200,6 @@ class RunningActivityUsecase
 
   @override
   void pause() {
-    _isPaused = true;
     geolocatorSensor.pause();
     accelerometerSensor.pause();
     _accelSub?.pause();
@@ -186,7 +209,6 @@ class RunningActivityUsecase
 
   @override
   void resume() {
-    _isPaused = false;
     geolocatorSensor.resume();
     accelerometerSensor.resume();
     _accelSub?.resume();
@@ -203,8 +225,9 @@ class RunningActivityUsecase
     geolocatorSensor.reset();
     _timer.reset();
     _steps = 0;
-    _isPaused = false;
-
+    _fallbackDistance = 0;
+    _stepCounter.reset();
+    _stepFusion.reset();
     _lastSnapshotSteps = 0;
     _lastSnapshotDistance = 0.0;
     _lastSnapshotElevation = 0.0;
@@ -284,7 +307,7 @@ class RunningActivityUsecase
         .where((value) => value.isFinite)
         .toList();
 
-        final speedList = sampleData
+    final speedList = sampleData
         .map((sample) => sample.speed)
         .whereType<double>()
         .where((value) => value.isFinite)
@@ -306,8 +329,9 @@ class RunningActivityUsecase
         _runningMet,
         _weightKg,
       ),
-      elevationGain:
-          elevationList.isEmpty ? 0 : totalElevationGain(elevationList),
+      elevationGain: elevationList.isEmpty
+          ? 0
+          : totalElevationGain(elevationList),
       avgCadence: calculateStepsPerMinute(_steps, currentElapsed),
       avgPace: paceList.isEmpty ? 0 : avgCalculator(paceList),
       speed: maxValue(speedList),

@@ -46,9 +46,7 @@ class CircularProgressMeter extends StatelessWidget {
 
     final text = d.toStringAsFixed(decimals);
     // Quita ceros sobrantes: "5.0" -> "5", "5.50" -> "5.5"
-    return text.contains('.')
-        ? text.replaceFirst(RegExp(r'\.?0+$'), '')
-        : text;
+    return text.contains('.') ? text.replaceFirst(RegExp(r'\.?0+$'), '') : text;
   }
 
   @override
@@ -74,7 +72,7 @@ class CircularProgressMeter extends StatelessWidget {
               painter: _RingPainter(
                 progress: 1.0,
                 strokeWidth: safeStrokeWidth,
-                color: colors.onSecondary,
+                color: colors.border,
               ),
             ),
           ),
@@ -99,11 +97,7 @@ class CircularProgressMeter extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                FaIcon(
-                  icon,
-                  size: context.iconSize.sm,
-                  color: colors.primary,
-                ),
+                FaIcon(icon, size: context.iconSize.sm, color: colors.primary),
                 SizedBox(height: spacing.xs),
               ],
 
@@ -157,9 +151,9 @@ class _RingPainter extends CustomPainter {
     this.color,
     this.gradientColors,
   }) : assert(
-          color != null || gradientColors != null,
-          'Either color or gradientColors must be provided',
-        );
+         color != null || gradientColors != null,
+         'Either color or gradientColors must be provided',
+       );
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -193,20 +187,11 @@ class _RingPainter extends CustomPainter {
     // Geometry
     // --------------------------------------------
 
-    final center = Offset(
-      size.width / 2,
-      size.height / 2,
-    );
+    final center = Offset(size.width / 2, size.height / 2);
 
-    final maxStroke = math.min(
-      size.width,
-      size.height,
-    );
+    final maxStroke = math.min(size.width, size.height);
 
-    final safeStrokeWidth = math.min(
-      strokeWidth,
-      maxStroke,
-    );
+    final safeStrokeWidth = math.min(strokeWidth, maxStroke);
 
     final radius = (maxStroke - safeStrokeWidth) / 2;
 
@@ -214,10 +199,7 @@ class _RingPainter extends CustomPainter {
       return;
     }
 
-    final rect = Rect.fromCircle(
-      center: center,
-      radius: radius,
-    );
+    final rect = Rect.fromCircle(center: center, radius: radius);
 
     // --------------------------------------------
     // Paint
@@ -233,8 +215,7 @@ class _RingPainter extends CustomPainter {
     // Gradient
     // --------------------------------------------
 
-    if (gradientColors != null &&
-        gradientColors!.length >= 2) {
+    if (gradientColors != null && gradientColors!.length >= 2) {
       paint.shader = SweepGradient(
         startAngle: 0,
         endAngle: 2 * math.pi,
@@ -258,13 +239,7 @@ class _RingPainter extends CustomPainter {
       return;
     }
 
-    canvas.drawArc(
-      rect,
-      startAngle,
-      sweepAngle,
-      false,
-      paint,
-    );
+    canvas.drawArc(rect, startAngle, sweepAngle, false, paint);
   }
 
   @override
@@ -272,16 +247,10 @@ class _RingPainter extends CustomPainter {
     return oldDelegate.progress != progress ||
         oldDelegate.strokeWidth != strokeWidth ||
         oldDelegate.color != color ||
-        !_sameColors(
-          oldDelegate.gradientColors,
-          gradientColors,
-        );
+        !_sameColors(oldDelegate.gradientColors, gradientColors);
   }
 
-  bool _sameColors(
-    List<Color>? a,
-    List<Color>? b,
-  ) {
+  bool _sameColors(List<Color>? a, List<Color>? b) {
     if (identical(a, b)) {
       return true;
     }

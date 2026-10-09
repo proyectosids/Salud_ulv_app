@@ -68,10 +68,7 @@ class AppSpacing extends ThemeExtension<AppSpacing> {
   }
 
   @override
-  AppSpacing lerp(
-    covariant AppSpacing? other,
-    double t,
-  ) {
+  AppSpacing lerp(covariant AppSpacing? other, double t) {
     if (other == null) return this;
 
     return AppSpacing(
@@ -93,7 +90,6 @@ class AppSpacing extends ThemeExtension<AppSpacing> {
   }
 }
 
-
 /// Allows access to AppSpacing through BuildContext.
 ///
 /// Example:
@@ -102,7 +98,6 @@ class AppSpacing extends ThemeExtension<AppSpacing> {
 /// context.spacing.radiusMd
 extension AppSpacingContext on BuildContext {
   AppSpacing get spacing {
-    return Theme.of(this).extension<AppSpacing>() ??
-        AppSpacing.standard;
+    return Theme.of(this).extension<AppSpacing>() ?? AppSpacing.standard;
   }
 }

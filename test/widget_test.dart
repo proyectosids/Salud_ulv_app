@@ -1,30 +1,63 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:salud_ulv_app/main.dart';
+import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  test('restores and persists the selected theme mode', () async {
+    SharedPreferences.setMockInitialValues({'theme_mode_v1': 'dark'});
+    final controller = ThemeController();
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    await controller.load();
+    expect(controller.mode, ThemeMode.dark);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await controller.setMode(ThemeMode.light);
+    final restoredController = ThemeController();
+    await restoredController.load();
+
+    expect(restoredController.mode, ThemeMode.light);
   });
+
+  testWidgets('applies light and dark palettes without rebuilding the app', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final controller = ThemeController();
+    await controller.setMode(ThemeMode.light);
+
+    await tester.pumpWidget(_ThemeTestApp(controller: controller));
+    expect(
+      Theme.of(tester.element(find.byKey(const Key('theme-probe')))).brightness,
+      Brightness.light,
+    );
+
+    await controller.setMode(ThemeMode.dark);
+    await tester.pumpAndSettle();
+
+    expect(
+      Theme.of(tester.element(find.byKey(const Key('theme-probe')))).brightness,
+      Brightness.dark,
+    );
+  });
+}
+
+class _ThemeTestApp extends StatelessWidget {
+  const _ThemeTestApp({required this.controller});
+
+  final ThemeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => MaterialApp(
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: controller.mode,
+        home: const Scaffold(body: SizedBox(key: Key('theme-probe'))),
+      ),
+    );
+  }
 }

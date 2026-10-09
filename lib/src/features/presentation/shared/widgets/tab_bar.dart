@@ -9,11 +9,7 @@ class TabItem {
   final IconData? icon;
   final VoidCallback onTap;
 
-  const TabItem({
-    required this.label,
-    this.icon,
-    required this.onTap,
-  });
+  const TabItem({required this.label, this.icon, required this.onTap});
 }
 
 class CustomTabBar extends StatefulWidget {
@@ -60,17 +56,13 @@ class _CustomTabBarState extends State<CustomTabBar> {
     final spacing = context.spacing;
 
     return Container(
-      constraints: BoxConstraints(
-        minHeight: widget.pHeight ?? 48,
-      ),
+      constraints: BoxConstraints(minHeight: widget.pHeight ?? 48),
       width: widget.pWidth ?? double.infinity,
       padding: EdgeInsets.all(spacing.xs),
       decoration: BoxDecoration(
         color: widget.backgroundColor ?? colors.surface,
         borderRadius: BorderRadius.circular(spacing.radiusLg),
-        border: Border.all(
-          color: colors.border,
-        ),
+        border: Border.all(color: colors.border),
         boxShadow: context.shadows.smBoxShadow,
       ),
       child: Row(
@@ -84,7 +76,8 @@ class _CustomTabBarState extends State<CustomTabBar> {
                   padding: EdgeInsets.symmetric(vertical: spacing.sm),
                   decoration: BoxDecoration(
                     color: _selectedIndex == i
-                        ? (widget.selectedColor ?? colors.primary.withAlpha(75))
+                        ? (widget.selectedColor ??
+                              colors.secondary.withAlpha(36))
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(spacing.radiusMd),
                   ),
@@ -96,22 +89,21 @@ class _CustomTabBarState extends State<CustomTabBar> {
                           widget.tabs[i].icon,
                           size: context.iconSize.md,
                           color: _selectedIndex == i
-                              ? colors.onPrimary
-                              : widget.color ?? colors.onPrimary,
+                              ? colors.secondary
+                              : widget.color ?? colors.textSecondary,
                         ),
                         SizedBox(width: spacing.xs),
                       ],
                       CustomTextWidget(
                         label: widget.tabs[i].label,
                         fontSize: context.fontsSize.caption,
-                        
-                          color: _selectedIndex == i
-                              ? colors.onPrimary
-                              : widget.color ?? colors.onPrimary,
-                          fontWeight: _selectedIndex == i
-                              ? FontWeight.w900
-                              : FontWeight.normal,
-                        
+
+                        color: _selectedIndex == i
+                            ? colors.secondary
+                            : widget.color ?? colors.textSecondary,
+                        fontWeight: _selectedIndex == i
+                            ? FontWeight.w900
+                            : FontWeight.normal,
                       ),
                     ],
                   ),

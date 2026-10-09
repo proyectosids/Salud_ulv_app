@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:salud_ulv_app/src/core/models/user.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/spacers.dart';
 
-
 enum RowOrientation { horizontal, vertical }
 
 class CustomListView extends StatelessWidget {
@@ -49,8 +48,8 @@ class CustomListView extends StatelessWidget {
   Widget build(BuildContext context) {
     if (widgets.isEmpty) return const SizedBox.shrink();
 
-    final _spacing = spacing ?? context.spacing.md;
-    final _runSpacing = runSpacing ?? _spacing;
+    final effectiveSpacing = spacing ?? context.spacing.md;
+    final effectiveRunSpacing = runSpacing ?? effectiveSpacing;
     final isHorizontal = orientation == RowOrientation.horizontal;
 
     Widget buildSingleLine(
@@ -68,8 +67,11 @@ class CustomListView extends StatelessWidget {
           padding: !addContentPadding
               ? EdgeInsets.zero
               : isHorizontal
-                  ? EdgeInsets.symmetric(vertical: _spacing * 1.5, horizontal: 4)
-                  : EdgeInsets.symmetric(horizontal: _spacing, vertical: 4),
+              ? EdgeInsets.symmetric(
+                  vertical: effectiveSpacing * 1.5,
+                  horizontal: 4,
+                )
+              : EdgeInsets.symmetric(horizontal: effectiveSpacing, vertical: 4),
           itemCount: lineWidgets.length,
           itemBuilder: (context, i) {
             return Align(
@@ -79,9 +81,9 @@ class CustomListView extends StatelessWidget {
               child: lineWidgets[i],
             );
           },
-          separatorBuilder: (_, __) => isHorizontal
-              ? SizedBox(width: _spacing)
-              : SizedBox(height: _spacing),
+          separatorBuilder: (_, _) => isHorizontal
+              ? SizedBox(width: effectiveSpacing)
+              : SizedBox(height: effectiveSpacing),
         );
 
         if (isHorizontal) {
@@ -98,8 +100,8 @@ class CustomListView extends StatelessWidget {
 
       return Wrap(
         direction: isHorizontal ? Axis.horizontal : Axis.vertical,
-        spacing: _spacing,
-        runSpacing: _spacing,
+        spacing: effectiveSpacing,
+        runSpacing: effectiveSpacing,
         alignment: wrapAlignment,
         crossAxisAlignment: isHorizontal
             ? WrapCrossAlignment.center
@@ -117,9 +119,7 @@ class CustomListView extends StatelessWidget {
       final chunks = <List<Widget>>[];
 
       for (int i = 0; i < widgets.length; i += perLine) {
-        chunks.add(
-          widgets.sublist(i, (i + perLine).clamp(0, widgets.length)),
-        );
+        chunks.add(widgets.sublist(i, (i + perLine).clamp(0, widgets.length)));
       }
 
       final lineWidgets = <Widget>[];
@@ -129,8 +129,8 @@ class CustomListView extends StatelessWidget {
         if (i != chunks.length - 1) {
           lineWidgets.add(
             isHorizontal
-                ? SizedBox(height: _runSpacing)
-                : SizedBox(width: _runSpacing),
+                ? SizedBox(height: effectiveRunSpacing)
+                : SizedBox(width: effectiveRunSpacing),
           );
         }
       }
@@ -163,16 +163,10 @@ class CustomListView extends StatelessWidget {
   }
 }
 
-
-
-
 class MembersList extends StatelessWidget {
   final List<User> members;
 
-  const MembersList({
-    super.key,
-    required this.members,
-  });
+  const MembersList({super.key, required this.members});
 
   @override
   Widget build(BuildContext context) {
@@ -190,17 +184,13 @@ class MembersList extends StatelessWidget {
             vertical: 4,
           ),
 
-          leading: const CircleAvatar(
-            child: Icon(Icons.person),
-          ),
+          leading: const CircleAvatar(child: Icon(Icons.person)),
 
           title: Text(
             '${user.firstname ?? ''} ${user.surname ?? ''} ${user.lastname ?? ''}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
 
           subtitle: Text(

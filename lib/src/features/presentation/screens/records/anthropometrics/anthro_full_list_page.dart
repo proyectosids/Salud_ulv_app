@@ -7,8 +7,6 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_
 import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/anthro_bloc/anthro_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/buttons.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/widgets/listviews.dart';
 
 class AllAnthroRecordsPage extends StatelessWidget{
   const AllAnthroRecordsPage({super.key});

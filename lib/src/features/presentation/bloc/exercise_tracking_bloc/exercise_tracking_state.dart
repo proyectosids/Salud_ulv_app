@@ -1,4 +1,5 @@
 import 'package:salud_ulv_app/src/core/repositories/repos/sensors_repo.dart';
+import 'package:salud_ulv_app/src/core/repositories/services/exercise_permission.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_tracking_bloc.dart';
 // import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_type.dart';
 
@@ -12,7 +13,16 @@ class ExerciseInitial extends ExerciseTrackingState {
 }
 
 class ExercisePermissionsDenied extends ExerciseTrackingState {
-  const ExercisePermissionsDenied({required super.selectedType});
+  const ExercisePermissionsDenied({
+    required super.selectedType,
+    required this.issue,
+    required this.message,
+    required this.canOpenSettings,
+  });
+
+  final ExercisePermissionIssue issue;
+  final String message;
+  final bool canOpenSettings;
 }
 
 class ActiveExerciseState extends ExerciseTrackingState {
@@ -64,10 +74,7 @@ class ExerciseResumed extends ExerciseTrackingState {
 
 class ExerciseSaved extends ExerciseTrackingState {
   final Coordinates endLocation;
-  const ExerciseSaved({
-    required super.selectedType,
-    required this.endLocation,
-  });
+  const ExerciseSaved({required super.selectedType, required this.endLocation});
 }
 
 class ExerciseDiscarded extends ExerciseTrackingState {

@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:salud_ulv_app/src/features/presentation/shared/themes/shadows.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/themes/themes.dart';
 
 /// Describes one "page" of the [TabbedContainer].
 class TabPage {
-  const TabPage({
-    required this.title,
-    required this.child,
-    this.icon,
-  });
+  const TabPage({required this.title, required this.child, this.icon});
 
   final String title;
   final Widget child;
@@ -52,7 +47,6 @@ class _TabbedContainerState extends State<TabbedContainer> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     final spacing = context.spacing;
 
     final buttons = [
@@ -84,9 +78,7 @@ class _TabbedContainerState extends State<TabbedContainer> {
               child: Row(children: buttons),
             )
           else
-            Row(
-              children: [for (final b in buttons) Expanded(child: b)],
-            ),
+            Row(children: [for (final b in buttons) Expanded(child: b)]),
           SizedBox(height: spacing.md),
 
           // Active page
@@ -120,9 +112,8 @@ class _TabButton extends StatelessWidget {
     final spacing = context.spacing;
     final textTheme = Theme.of(context).textTheme;
 
-    // Adjust to whatever your theme extension calls these.
-    final activeColor = colors.onPrimary;
-    final inactiveColor = Theme.of(context).hintColor;
+    final activeColor = colors.secondary;
+    final inactiveColor = colors.textSecondary;
 
     return InkWell(
       onTap: onTap,
@@ -153,8 +144,9 @@ class _TabButton extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.labelLarge?.copyWith(
                       color: selected ? activeColor : inactiveColor,
-                      fontWeight:
-                          selected ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: selected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                     ),
                   ),
                 ),

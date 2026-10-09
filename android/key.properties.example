@@ -1,0 +1,6 @@
+# Copia este archivo como android/key.properties. No confirmes el archivo real
+# ni el keystore al repositorio.
+storePassword=CAMBIAR
+keyPassword=CAMBIAR
+keyAlias=upload
+storeFile=C:/ruta/segura/upload-keystore.jks
