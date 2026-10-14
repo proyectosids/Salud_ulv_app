@@ -208,6 +208,7 @@ class ExerciseTrackingBloc
     usecase.discard();
     finishExercise();
 
+    emit(ExerciseDiscarded(selectedType: selectedType));
     emit(ExerciseInitial(selectedType: _selectedType));
   }
 }

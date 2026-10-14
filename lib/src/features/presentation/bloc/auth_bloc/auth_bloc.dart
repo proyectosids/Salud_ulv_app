@@ -114,6 +114,27 @@ class LoginBloc extends Bloc<AuthEvent, AuthState> {
   }
 }
 
+
+class ChangePasswordBloc extends Bloc<AuthEvent, AuthState> {
+  final IChangePWUseCase changePWUseCase;
+
+  ChangePasswordBloc({required this.changePWUseCase}) : super(AuthInitial()) {
+    on<ChangePasswordEvent>(_changePw);
+  }
+
+  Future<void> _changePw(ChangePasswordEvent event, Emitter<AuthState> emit) async {
+    try {
+      emit(AuthLoading());
+      await changePWUseCase.execute(event.email, event.newPassword);
+      emit(PasswordChanged());
+    } catch (e) {
+      emit(AuthError(e.toString()));
+    }
+  }
+}
+
+
+
 class LogoutBloc extends Bloc<AuthEvent, AuthState> {
   final ILogoutUseCase logoutUseCase;
 

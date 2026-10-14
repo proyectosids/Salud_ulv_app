@@ -140,7 +140,7 @@ class WalkRepo implements IExerciseLocalRepo {
     try {
       final db = await _db;
 
-      await db.delete(_tableName, where: 'steps == ?', whereArgs: [0]);
+      // await db.delete(_tableName, where: 'steps == ?', whereArgs: [0]);
 
       // final result1 = await db.query(
       //   _tableName,

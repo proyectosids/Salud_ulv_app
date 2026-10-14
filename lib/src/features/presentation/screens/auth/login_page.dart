@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:salud_ulv_app/src/core/usecase/auth/login_usecase.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/member_repo.dart';
+import 'package:salud_ulv_app/src/features/presentation/screens/auth/change_pw_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/main_wrapper.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/input_validators.dart';
 import 'package:salud_ulv_app/src/features/presentation/shared/helpers/launch_url.dart';
@@ -205,6 +206,34 @@ class _SignInPageState extends State<_SignInPage> {
                                       ),
 
                                 SizedBox(height: context.spacing.lg),
+
+                                Row(
+                                  mainAxisAlignment: .center,
+                                  children: [
+                                    CustomTextWidget(
+                                      label: "¿Has olvidado tu contraseña?",
+                                      fontSize: context.fontsSize.caption,
+                                    ),
+                                    SizedBox(width: context.spacing.xs),
+
+                                    GestureDetector(
+                                      onTap: () => Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const ChangePwPage(),
+                                        ),
+                                      ),
+                                      child: CustomTextWidget(
+                                        label: "Restablecela",
+                                        fontSize: context.fontsSize.caption,
+                                        color: context.colors.success,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+
+                                SizedBox(height: context.spacing.sm),
                                 Row(
                                   mainAxisAlignment: .center,
                                   children: [

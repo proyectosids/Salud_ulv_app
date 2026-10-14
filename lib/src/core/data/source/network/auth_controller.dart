@@ -96,6 +96,8 @@ class AuthHTTPController implements IAuthExtRepo {
   @override
   Future<String?> loginWithEmailOrCode(String input, String password) async {
     try {
+      // debugPrint(_apiUri('/auth/login').toString());
+
       final request = await _client
           .post(
             _apiUri('/auth/login'),
@@ -121,6 +123,8 @@ class AuthHTTPController implements IAuthExtRepo {
               : 'No fue posible iniciar sesión. Inténtalo nuevamente.',
         );
       }
+
+      debugPrint(request.statusCode.toString());
 
       final body = jsonDecode(request.body);
       final token = body['token'] as String;

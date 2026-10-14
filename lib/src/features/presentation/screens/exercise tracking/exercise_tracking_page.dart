@@ -48,6 +48,8 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
   // String _formatDuration(Duration d) =>
   //     '${d.inMinutes.toString().padLeft(2, '0')}:${(d.inSeconds % 60).toString().padLeft(2, '0')}';
 
+  // double _expandableSheetSize = 0.32;
+
   final MapController _mapController = MapController();
   LatLng? _initialLocation;
   LatLng? startPoint;
@@ -70,6 +72,17 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
     }
   }
 
+  final _sheetController = DraggableScrollableController();
+
+  void _moveSheet(double size) {
+    if (!_sheetController.isAttached) return;
+    _sheetController.animateTo(
+      size,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -88,8 +101,10 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
           BlocListener<ExerciseTrackingBloc, ExerciseTrackingState>(
             listener: (context, state) {
               debugPrint('Puntos recorridos: $points');
+              context.read<GetCurrentLocationBloc>().add(GetCurrentLocation());
 
               if (state is TrackingExercise) {
+                // _expandableSheetSize = 0.32;
                 var routeChanged = false;
                 if (state.startLocation != null && startPoint == null) {
                   startPoint = LatLng(
@@ -118,6 +133,7 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
               }
 
               if (state is ExerciseSaved) {
+                // _expandableSheetSize = 0.32;
                 setState(() {
                   endPoint = LatLng(
                     state.endLocation.latitude,
@@ -126,6 +142,16 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
 
                   points.add(endPoint!);
                 });
+              }
+
+              if (state is ExercisePaused) _moveSheet(0.7);
+
+              if ( state is TrackingExercise ||
+                state is ExerciseResumed ||
+                  state is ExerciseSaved ||
+                  state is ExerciseDiscarded ||
+                  state is ExerciseError) {
+                _moveSheet(0.32);
               }
 
               if (state is ExerciseDiscarded || state is ExerciseInitial) {
@@ -137,14 +163,17 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
               }
 
               if (state is ExerciseSaved) {
+                // _expandableSheetSize = 0.32;
                 CustomSnackBar.show(context, message: "Actividad guardada");
               }
 
               if (state is ExerciseDiscarded) {
+                // _expandableSheetSize = 0.32;
                 CustomSnackBar.show(context, message: "Actividad descartada");
               }
 
               if (state is ExerciseError) {
+                // _expandableSheetSize = 0.32;
                 CustomSnackBar.showError(context, state.message);
               }
 
@@ -224,25 +253,28 @@ class _ExerciseTrackerMainPageState extends State<_ExerciseTrackerMainPage> {
               ),
             ),
 
-            ExpandableSheet(
-              initialSize: 0.32,
-              minSize: 0.32,
-              maxSize: 0.7,
-              child: Column(
-                children: [
-                  BlocBuilder<ExerciseTrackingBloc, ExerciseTrackingState>(
-                    builder: (context, state) => ExerciseTypeSelector(
-                      selected: state.selectedType,
-                      enabled: state is! ActiveExerciseState,
-                      onSelected: (type) => context
-                          .read<ExerciseTrackingBloc>()
-                          .add(SelectExerciseTypeEvent(type)),
-                    ),
+            BlocBuilder<ExerciseTrackingBloc, ExerciseTrackingState>(
+              builder: (context, state) {
+                return ExpandableSheet(
+                  controller: _sheetController,
+                  initialSize: 0.32,
+                  minSize: 0.32,
+                  maxSize: 0.7,
+                  child: Column(
+                    children: [
+                      ExerciseTypeSelector(
+                        selected: state.selectedType,
+                        enabled: state is! ActiveExerciseState,
+                        onSelected: (type) => context
+                            .read<ExerciseTrackingBloc>()
+                            .add(SelectExerciseTypeEvent(type)),
+                      ),
+                      SizedBox(height: context.spacing.md),
+                      const TrackingSheetContent(),
+                    ],
                   ),
-                  SizedBox(height: context.spacing.md),
-                  const TrackingSheetContent(),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),

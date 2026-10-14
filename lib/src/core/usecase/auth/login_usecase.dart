@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:salud_ulv_app/src/core/models/member.dart';
 import 'package:salud_ulv_app/src/core/models/user.dart';
 import 'package:salud_ulv_app/src/core/repositories/repos/auth_repo.dart';
@@ -44,8 +45,10 @@ class LoginUsecase implements ILoginUseCase {
     //   roles: data['roles'],
     //   );
 
+    debugPrint('saving token');
     await tokenStorageRepo.saveUserToken(token);
     final data = tokenRepo.decode(token);
+    debugPrint('decoding token');
 
     final tokenUser = data['user'];
     final groupID = data['groupID'];
@@ -64,10 +67,22 @@ class LoginUsecase implements ILoginUseCase {
       createdAt: DateTime.parse(tokenUser['createdAt'] as String),
     );
 
+    debugPrint(user.userUUID);
+    debugPrint(user.userCode);
+    debugPrint(user.firstname);
+    debugPrint(user.surname);
+    debugPrint(user.lastname);
+    debugPrint(user.email);
+    debugPrint(user.currentRole);
+    debugPrint(user.roles.toString());
+    debugPrint(user.createdAt!.toIso8601String());
+
     // debugPrint(user.currentRole);
 
+    debugPrint('before checking useruuid');
     if (user.userUUID == null) return;
     // save user from token data
+    debugPrint('saving user locally');
     await userRepo.save(user);
 
     // await userRepo.setCurrentRole(userUUID!, roles[0]);
@@ -80,6 +95,7 @@ class LoginUsecase implements ILoginUseCase {
       typeID: typeID,
     );
 
+    debugPrint('saving member info locally');
     await memberLocalRepo.saveInfo(memberInfo);
 
     return;

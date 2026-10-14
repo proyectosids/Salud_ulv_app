@@ -55,6 +55,16 @@ class CheckAuthEvent extends AuthEvent {}
 
 class CheckRoleEvent extends AuthEvent {}
 
+
+
+class ChangePasswordEvent extends AuthEvent{
+    final String email;
+  final String newPassword;
+  ChangePasswordEvent({required this.email, required this.newPassword});
+}
+
+
+
 class DeleteAccountEvent extends AuthEvent{}
 
 class LogoutEvent extends AuthEvent {}

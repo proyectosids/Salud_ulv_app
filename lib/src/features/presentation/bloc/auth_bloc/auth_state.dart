@@ -25,6 +25,8 @@ class LoginAuthenticated extends AuthState{
 
 class OtpSent extends AuthState{}
 
+class PasswordChanged extends AuthState{}
+
 class Unauthenticated extends AuthState{}
 
 class AuthError extends AuthState{
