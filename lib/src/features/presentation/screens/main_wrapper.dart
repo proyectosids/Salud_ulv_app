@@ -1,8 +1,14 @@
+import 'dart:async';
+
 // import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:salud_ulv_app/src/core/data/source/local/sensors/geolocator_sensor.dart';
 import 'package:salud_ulv_app/src/core/models/roles.dart';
+import 'package:salud_ulv_app/src/core/repositories/services/exercise_permission.dart';
+import 'package:salud_ulv_app/src/core/services/current_location_cache.dart';
 import 'package:salud_ulv_app/src/core/usecase/auth/check_auth_usecase.dart';
 import 'package:salud_ulv_app/src/core/data/source/token/current_user_service.dart';
 import 'package:salud_ulv_app/src/core/data/source/token/token.dart';
@@ -12,7 +18,7 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_bloc
 import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_event.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/auth_bloc/auth_state.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/bottom_bar_bloc/bottom_bar_bloc.dart';
-import 'package:salud_ulv_app/src/features/presentation/screens/exercise%20tracking/exercise_tracking_page.dart';
+import 'package:salud_ulv_app/src/features/presentation/screens/exercise%20tracking/exercise_catalog_page.dart';
 // import 'package:salud_ulv_app/src/features/presentation/screens/groups/join_group_page.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/home/home_admin.dart';
 import 'package:salud_ulv_app/src/features/presentation/screens/home/home_member.dart';
@@ -63,9 +69,23 @@ class _MainWrapperState extends State<_MainWrapper> {
   @override
   void initState() {
     super.initState();
+    unawaited(_prepareExercisePermissionsAndLocation());
     context.read<CheckRoleBLoc>().add(CheckRoleEvent());
     pageController = PageController(initialPage: _initialIndex);
     context.read<BottomBarBloc>().add(ChangeSelectedIndex(_initialIndex));
+  }
+
+  Future<void> _prepareExercisePermissionsAndLocation() async {
+    if (kIsWeb ||
+        (defaultTargetPlatform != TargetPlatform.android &&
+            defaultTargetPlatform != TargetPlatform.iOS)) {
+      return;
+    }
+    final permission = await context
+        .read<IExercisePermissionService>()
+        .requestWhenNeeded(requiresLocation: true);
+    if (!mounted || !permission.isGranted) return;
+    await CurrentLocationCache.instance.warmUp(GeolocatorSensor());
   }
 
   @override
@@ -112,18 +132,29 @@ class _MainWrapperState extends State<_MainWrapper> {
         );
 
         if (state is CheckAuthenticated) {
-          final tabs = tabsForRole(state.role);
+          final tabs = tabsForRole(
+            state.role,
+            onActivitySelected: () {
+              context.read<BottomBarBloc>().add(ChangeSelectedIndex(1));
+              pageController.animateToPage(
+                1,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+              );
+            },
+          );
           final showFab = state.role == UserRole.member;
 
-          return Scaffold(
-            backgroundColor: context.colors.background,
-            bottomNavigationBar: _mainWrapperBottomNavBar(
-              context,
-              tabs,
-              showFab,
+          return BlocBuilder<BottomBarBloc, int>(
+            builder: (context, _) => Scaffold(
+              backgroundColor: context.colors.background,
+              bottomNavigationBar: _mainWrapperBottomNavBar(
+                context,
+                tabs,
+                showFab,
+              ),
+              body: _mainWrapperBody(tabs),
             ),
-
-            body: _mainWrapperBody(tabs),
           );
         }
         if (state is Unauthenticated) {
@@ -340,18 +371,18 @@ class RoleTab {
   final String label;
 }
 
-List<RoleTab> tabsForRole(UserRole role) {
+List<RoleTab> tabsForRole(UserRole role, {VoidCallback? onActivitySelected}) {
   switch (role) {
     case UserRole.member:
       return [
         RoleTab(
-          page: const MemberHomePage(),
+          page: MemberHomePage(onActivitySelected: onActivitySelected),
           defaultIcon: Icons.home_outlined,
           filledIcon: Icons.home,
           label: 'Inicio',
         ),
         RoleTab(
-          page: const ExerciseTrackerMainPage(),
+          page: const ExerciseCatalogPage(),
           defaultIcon: Icons.play_arrow_outlined,
           filledIcon: Icons.play_arrow,
           label: 'Actividades',

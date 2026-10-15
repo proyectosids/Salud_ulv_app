@@ -49,7 +49,9 @@ class ExercisePermissionResult {
 }
 
 abstract class IExercisePermissionService {
-  Future<ExercisePermissionResult> check();
-  Future<ExercisePermissionResult> requestWhenNeeded();
+  Future<ExercisePermissionResult> check({bool requiresLocation = true});
+  Future<ExercisePermissionResult> requestWhenNeeded({
+    bool requiresLocation = true,
+  });
   Future<bool> openSettingsFor(ExercisePermissionIssue issue);
 }

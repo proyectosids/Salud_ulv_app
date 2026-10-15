@@ -1,6 +1,7 @@
 import 'package:salud_ulv_app/src/core/repositories/repos/sensors_repo.dart';
 import 'package:salud_ulv_app/src/core/repositories/services/exercise_permission.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_tracking_bloc.dart';
+
 // import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_type.dart';
 
 abstract class ExerciseTrackingState {
@@ -73,8 +74,26 @@ class ExerciseResumed extends ExerciseTrackingState {
 }
 
 class ExerciseSaved extends ExerciseTrackingState {
-  final Coordinates endLocation;
-  const ExerciseSaved({required super.selectedType, required this.endLocation});
+  final Coordinates? startLocation;
+  final Coordinates? endLocation;
+  final Duration duration;
+  final double distance;
+  final double caloriesBurned;
+  final DateTime completedAt;
+  final int? steps;
+  final double? speed;
+
+  const ExerciseSaved({
+    required super.selectedType,
+    required this.duration,
+    required this.distance,
+    required this.caloriesBurned,
+    required this.completedAt,
+    this.startLocation,
+    this.endLocation,
+    this.steps,
+    this.speed,
+  });
 }
 
 class ExerciseDiscarded extends ExerciseTrackingState {

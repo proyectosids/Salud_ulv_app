@@ -16,21 +16,27 @@ import 'package:salud_ulv_app/src/core/services/motion_tracking/step_fusion_trac
 import 'package:uuid/uuid.dart';
 
 class RunningActivityUsecase
-    implements IExerciseTrackUseCase, ISpeedTrackable, ILocationTrackable {
+    implements
+        IExerciseTrackUseCase,
+        ISpeedTrackable,
+        IStepTrackable,
+        ILocationTrackable {
   final IExerciseLocalRepo exerciseLocalRepo;
   final IActivitySampleRepo aerobicSampleRepo;
   final ICurrentUserSession currentUserSession;
 
   final IAccelerometer accelerometerSensor;
   final IGeolocator geolocatorSensor;
+  final bool indoor;
 
   RunningActivityUsecase(
     this.exerciseLocalRepo,
     this.aerobicSampleRepo,
     this.currentUserSession,
     this.accelerometerSensor,
-    this.geolocatorSensor,
-  );
+    this.geolocatorSensor, {
+    this.indoor = false,
+  });
 
   static const int _categoryID = ExerciseCategoryIds.running;
 
@@ -86,7 +92,8 @@ class RunningActivityUsecase
   Duration? get elapsed => _timer.elapsed;
 
   @override
-  double? get distance => geolocatorSensor.distance > _fallbackDistance
+  double? get distance =>
+      !indoor && geolocatorSensor.distance > _fallbackDistance
       ? geolocatorSensor.distance
       : _fallbackDistance;
 
@@ -103,7 +110,17 @@ class RunningActivityUsecase
 
   /// Velocidad instantánea en m/s (GPS).
   @override
-  double? get speed => geolocatorSensor.speed;
+  double? get speed {
+    if (!indoor) return geolocatorSensor.speed;
+    final e = elapsed;
+    if (e == null || e.inSeconds == 0) return 0;
+    return _fallbackDistance / e.inSeconds;
+  }
+
+  /// Running already counts these steps to calculate cadence. Exposing the
+  /// same value lets the tracking UI and final summary restore that metric.
+  @override
+  int? get steps => _steps;
 
   /// Velocidad promedio en m/s: distancia total / tiempo en movimiento.
   double get avgSpeed {
@@ -117,6 +134,7 @@ class RunningActivityUsecase
 
   @override
   Coordinates? get startLocation {
+    if (indoor) return null;
     final lat = geolocatorSensor.startLatitude;
     final lng = geolocatorSensor.startLongitude;
     if (lat == null || lng == null) return null;
@@ -125,6 +143,7 @@ class RunningActivityUsecase
 
   @override
   Coordinates? get currentLocation {
+    if (indoor) return null;
     // latitude/longitude arrancan en 0.0 hasta la primera lectura;
     // usa startLatitude como señal de que ya hay un fix real.
     if (geolocatorSensor.startLatitude == null) return null;
@@ -158,12 +177,14 @@ class RunningActivityUsecase
     // 3. Crear la fila en BD
     await exerciseLocalRepo.setIDs(activityID, userUUID, _categoryID, date);
 
-    await geolocatorSensor.start(
-      2,
-      4,
-      1,
-      maxExpectedSpeed: _maximumRunningSpeed,
-    );
+    if (!indoor) {
+      await geolocatorSensor.start(
+        2,
+        4,
+        1,
+        maxExpectedSpeed: _maximumRunningSpeed,
+      );
+    }
     await accelerometerSensor.start();
 
     final accelStream = streamSpeedReductor(accelerometerSensor.magnitude, 50);
@@ -174,7 +195,7 @@ class RunningActivityUsecase
       final candidate = _stepCounter.update(raw!, timestamp: now);
       if (!candidate) return;
 
-      final motionState = !geolocatorSensor.hasReliableFix
+      final motionState = indoor || !geolocatorSensor.hasReliableFix
           ? LocationMotionState.unavailable
           : geolocatorSensor.hasMovement
           ? LocationMotionState.moving
@@ -186,7 +207,7 @@ class RunningActivityUsecase
       );
       if (result.confirmedSteps > 0) {
         _steps += result.confirmedSteps;
-        if (!geolocatorSensor.hasReliableFix) {
+        if (indoor || !geolocatorSensor.hasReliableFix) {
           final gpsDistance = geolocatorSensor.distance;
           if (_fallbackDistance < gpsDistance) _fallbackDistance = gpsDistance;
           _fallbackDistance += result.confirmedSteps * _estimatedStrideMeters;
@@ -364,7 +385,7 @@ class RunningActivityUsecase
     _snapshotBusy = true;
     try {
       final currentSteps = _steps;
-      final currentElevation = geolocatorSensor.elevation;
+      final currentElevation = indoor ? 0.0 : geolocatorSensor.elevation;
 
       final currentCalories = calculateCalories(
         elapsed: currentElapsed,
@@ -380,10 +401,11 @@ class RunningActivityUsecase
 
       // Tasas del intervalo
       final cadence = calculateCadence(stepsDelta, interval);
-      final pace = geolocatorSensor.hasMovement
-          ? calculatePace(interval, distanceDelta)
+      final isMoving = indoor ? stepsDelta > 0 : geolocatorSensor.hasMovement;
+      final pace = isMoving ? calculatePace(interval, distanceDelta) : 0.0;
+      final currentSpeed = interval.inMilliseconds > 0
+          ? distanceDelta / (interval.inMilliseconds / 1000)
           : 0.0;
-      final currentSpeed = geolocatorSensor.speed;
 
       final snapshotData = RunningActivitySample(
         activityID: activityID,
@@ -395,8 +417,8 @@ class RunningActivityUsecase
         pace: pace,
         speed: currentSpeed,
         heartRate: 0,
-        latitude: geolocatorSensor.latitude,
-        longitude: geolocatorSensor.longitude,
+        latitude: indoor ? null : geolocatorSensor.latitude,
+        longitude: indoor ? null : geolocatorSensor.longitude,
       );
 
       await aerobicSampleRepo.save(snapshotData);

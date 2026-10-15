@@ -6,7 +6,20 @@ import 'package:flutter_background_service/flutter_background_service.dart';
 
 final FlutterBackgroundService backgroundService = FlutterBackgroundService();
 
+bool get isBackgroundServiceSupported =>
+    !kIsWeb &&
+    (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS);
+
 Future<void> initializeService() async {
+  if (!isBackgroundServiceSupported) {
+    debugPrint(
+      'Background exercise service disabled on '
+      '${kIsWeb ? 'web' : defaultTargetPlatform.name}.',
+    );
+    return;
+  }
+
   final service = FlutterBackgroundService();
 
   await service.configure(
@@ -88,6 +101,8 @@ void onStart(ServiceInstance service) async {
 // ============================================================
 
 Future<void> startBackgroundService() async {
+  if (!isBackgroundServiceSupported) return;
+
   final service = FlutterBackgroundService();
 
   final isRunning = await service.isRunning();
@@ -98,12 +113,16 @@ Future<void> startBackgroundService() async {
 }
 
 void stopBackgroundService() {
+  if (!isBackgroundServiceSupported) return;
+
   final service = FlutterBackgroundService();
 
   service.invoke('stopService');
 }
 
 void startExerciseTracking() {
+  if (!isBackgroundServiceSupported) return;
+
   final service = FlutterBackgroundService();
 
   service.invoke('setAsForeground');
@@ -111,12 +130,16 @@ void startExerciseTracking() {
 }
 
 void pauseExerciseTracking() {
+  if (!isBackgroundServiceSupported) return;
+
   final service = FlutterBackgroundService();
 
   service.invoke('pauseTracking');
 }
 
 void stopExerciseTracking() {
+  if (!isBackgroundServiceSupported) return;
+
   final service = FlutterBackgroundService();
 
   service.invoke('setAsBackground'); // demota una vez que termina el tracking

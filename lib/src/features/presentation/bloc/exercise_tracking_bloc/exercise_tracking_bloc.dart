@@ -7,18 +7,20 @@ import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_b
 import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_tracking_state.dart';
 import 'package:salud_ulv_app/src/features/services/background_service.dart';
 
-enum ExerciseType { walk, running, cycling }
+enum ExerciseType { walk, running, indoorRunning, cycling }
 
 extension ExerciseTypeX on ExerciseType {
   String get label => switch (this) {
     ExerciseType.walk => 'Caminata',
-    ExerciseType.running => 'Running',
+    ExerciseType.running => 'Carrera',
+    ExerciseType.indoorRunning => 'Carrera interior',
     ExerciseType.cycling => 'Ciclismo',
   };
 
   IconData get icon => switch (this) {
     ExerciseType.walk => Icons.directions_walk_rounded,
     ExerciseType.running => Icons.directions_run_rounded,
+    ExerciseType.indoorRunning => Icons.fitness_center,
     ExerciseType.cycling => Icons.directions_bike_rounded,
   };
 }
@@ -72,7 +74,9 @@ class ExerciseTrackingBloc
     StartExerciseEvent event,
     Emitter<ExerciseTrackingState> emit,
   ) async {
-    final permission = await permissionService.requestWhenNeeded();
+    final permission = await permissionService.requestWhenNeeded(
+      requiresLocation: _selectedType != ExerciseType.indoorRunning,
+    );
     if (!permission.isGranted) {
       emit(
         ExercisePermissionsDenied(
@@ -86,7 +90,12 @@ class ExerciseTrackingBloc
     }
 
     try {
-      await startBackgroundService();
+      // El servicio Android está declarado como servicio de ubicación. La
+      // carrera interior no usa GPS y se mantiene en primer plano, por lo que
+      // no debe arrancarlo sin el permiso de ubicación.
+      if (_selectedType != ExerciseType.indoorRunning) {
+        await startBackgroundService();
+      }
       await usecase.start();
       await _startTracking(emit);
     } catch (error, stackTrace) {
@@ -174,15 +183,31 @@ class ExerciseTrackingBloc
     Emitter<ExerciseTrackingState> emit,
   ) async {
     try {
+      // Capture the session before save(), because every tracker resets itself
+      // after persisting the activity locally.
+      final duration = usecase.elapsed ?? Duration.zero;
+      final distance = usecase.distance ?? 0;
+      final caloriesBurned = usecase.caloriesBurned ?? 0;
+      final steps = _steps;
+      final speed = _speed;
+      final startLocation = _location?.startLocation;
       final endLocation = _location?.currentLocation;
 
       await usecase.save();
 
-      if (endLocation != null) {
-        emit(
-          ExerciseSaved(selectedType: _selectedType, endLocation: endLocation),
-        );
-      }
+      emit(
+        ExerciseSaved(
+          selectedType: _selectedType,
+          duration: duration,
+          distance: distance,
+          caloriesBurned: caloriesBurned,
+          completedAt: DateTime.now(),
+          steps: steps,
+          speed: speed,
+          startLocation: startLocation,
+          endLocation: endLocation,
+        ),
+      );
       emit(ExerciseInitial(selectedType: _selectedType));
     } on ExerciseValidationException catch (e) {
       emit(ExerciseError(selectedType: _selectedType, message: e.message));

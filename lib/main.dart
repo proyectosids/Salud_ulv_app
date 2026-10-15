@@ -14,6 +14,7 @@ import 'package:salud_ulv_app/src/core/data/source/local/sensors/platform_step_c
 import 'package:salud_ulv_app/src/core/data/source/local/sensors/step_calibration_store.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/walk_repo.dart';
 import 'package:salud_ulv_app/src/core/data/source/local/sqflite/anthro_repo.dart';
+import 'package:salud_ulv_app/src/core/repositories/services/exercise_permission.dart';
 // import 'package:salud_ulv_app/src/core/data/source/local/sqflite/walk_samples_repo.dart';
 import 'package:salud_ulv_app/src/features/presentation/bloc/exercise_tracking_bloc/exercise_tracking_bloc.dart';
 import 'package:salud_ulv_app/src/features/services/background_service.dart';
@@ -52,51 +53,62 @@ void main() async {
   runApp(
     ThemeControllerScope(
       controller: themeController,
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider(
-            create: (_) => CheckAuthBloc(
-              checkAuthUseCase: CheckAuthUsecase(
-                TokenStorage(),
-                TokenHandler(),
-                CurrentUserSession(),
-                UserLocalRepo(),
-              ),
-            )..add(CheckAuthEvent()),
-          ),
-
-          BlocProvider(
-            create: (_) => ExerciseTrackingBloc(
-              permissionService: exercisePermissionService,
-              usecases: {
-                ExerciseType.walk: WalkActivityUsecase(
-                  WalkRepo(),
-                  WalkSamplesRepo(),
+      child: RepositoryProvider<IExercisePermissionService>.value(
+        value: exercisePermissionService,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => CheckAuthBloc(
+                checkAuthUseCase: CheckAuthUsecase(
+                  TokenStorage(),
+                  TokenHandler(),
                   CurrentUserSession(),
-                  AnthroLocalStorage(),
-                  AccelerometerSensor(),
-                  GeolocatorSensor(),
-                  const PlatformStepCounter(),
-                  const StepCalibrationStore(),
+                  UserLocalRepo(),
                 ),
-                ExerciseType.running: RunningActivityUsecase(
-                  RunningRepo(),
-                  RunningSamplesRepo(),
-                  CurrentUserSession(),
-                  AccelerometerSensor(),
-                  GeolocatorSensor(),
-                ),
-                ExerciseType.cycling: CyclingActivityUsecase(
-                  CyclingRepo(),
-                  CyclingSamplesRepo(),
-                  CurrentUserSession(),
-                  GeolocatorSensor(),
-                ),
-              },
+              )..add(CheckAuthEvent()),
             ),
-          ),
-        ],
-        child: const MyApp(),
+
+            BlocProvider(
+              create: (_) => ExerciseTrackingBloc(
+                permissionService: exercisePermissionService,
+                usecases: {
+                  ExerciseType.walk: WalkActivityUsecase(
+                    WalkRepo(),
+                    WalkSamplesRepo(),
+                    CurrentUserSession(),
+                    AnthroLocalStorage(),
+                    AccelerometerSensor(),
+                    GeolocatorSensor(),
+                    const PlatformStepCounter(),
+                    const StepCalibrationStore(),
+                  ),
+                  ExerciseType.running: RunningActivityUsecase(
+                    RunningRepo(),
+                    RunningSamplesRepo(),
+                    CurrentUserSession(),
+                    AccelerometerSensor(),
+                    GeolocatorSensor(),
+                  ),
+                  ExerciseType.indoorRunning: RunningActivityUsecase(
+                    RunningRepo(),
+                    RunningSamplesRepo(),
+                    CurrentUserSession(),
+                    AccelerometerSensor(),
+                    GeolocatorSensor(),
+                    indoor: true,
+                  ),
+                  ExerciseType.cycling: CyclingActivityUsecase(
+                    CyclingRepo(),
+                    CyclingSamplesRepo(),
+                    CurrentUserSession(),
+                    GeolocatorSensor(),
+                  ),
+                },
+              ),
+            ),
+          ],
+          child: const MyApp(),
+        ),
       ),
     ),
   );

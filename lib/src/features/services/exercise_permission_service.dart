@@ -15,51 +15,71 @@ class ExercisePermissionService implements IExercisePermissionService {
   Future<ExercisePermissionResult>? _activeRequest;
 
   @override
-  Future<ExercisePermissionResult> check() async {
+  Future<ExercisePermissionResult> check({bool requiresLocation = true}) async {
+    if (requiresLocation) {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        return const ExercisePermissionResult.denied(
+          ExercisePermissionIssue.locationServicesDisabled,
+        );
+      }
+
+      final location = _mapLocationPermission(
+        await Geolocator.checkPermission(),
+      );
+      if (!location.isGranted) return location;
+    }
+    return _checkActivityRecognition();
+  }
+
+  Future<ExercisePermissionResult> _requestLocationWhenNeeded() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       return const ExercisePermissionResult.denied(
         ExercisePermissionIssue.locationServicesDisabled,
       );
     }
 
-    final location = _mapLocationPermission(await Geolocator.checkPermission());
-    if (!location.isGranted) return location;
-    return _checkActivityRecognition();
+    var location = _mapLocationPermission(await Geolocator.checkPermission());
+    if (location.isGranted ||
+        location.issue != ExercisePermissionIssue.locationDenied) {
+      return location;
+    }
+
+    final preferences = await SharedPreferences.getInstance();
+    if (preferences.getBool(_locationPromptedKey) ?? false) {
+      return const ExercisePermissionResult.denied(
+        ExercisePermissionIssue.locationPreviouslyDenied,
+      );
+    }
+
+    // Register before opening the system dialog so an app suspension cannot
+    // launch a duplicate permission prompt.
+    await preferences.setBool(_locationPromptedKey, true);
+    location = _mapLocationPermission(await Geolocator.requestPermission());
+    if (location.issue == ExercisePermissionIssue.locationDenied) {
+      return const ExercisePermissionResult.denied(
+        ExercisePermissionIssue.locationPreviouslyDenied,
+      );
+    }
+    return location;
   }
 
   @override
-  Future<ExercisePermissionResult> requestWhenNeeded() {
-    return _activeRequest ??= _requestWhenNeeded().whenComplete(() {
-      _activeRequest = null;
-    });
+  Future<ExercisePermissionResult> requestWhenNeeded({
+    bool requiresLocation = true,
+  }) {
+    return _activeRequest ??= _requestWhenNeeded(requiresLocation).whenComplete(
+      () {
+        _activeRequest = null;
+      },
+    );
   }
 
-  Future<ExercisePermissionResult> _requestWhenNeeded() async {
-    var location = _mapLocationPermission(await Geolocator.checkPermission());
-    if (!location.isGranted) {
-      if (location.issue != ExercisePermissionIssue.locationDenied) {
-        return location;
-      }
-
-      final preferences = await SharedPreferences.getInstance();
-      if (preferences.getBool(_locationPromptedKey) ?? false) {
-        return const ExercisePermissionResult.denied(
-          ExercisePermissionIssue.locationPreviouslyDenied,
-        );
-      }
-
-      // Se registra antes de abrir el diálogo para evitar solicitudes
-      // duplicadas si la app se suspende durante la solicitud del sistema.
-      await preferences.setBool(_locationPromptedKey, true);
-      location = _mapLocationPermission(await Geolocator.requestPermission());
-      if (!location.isGranted) {
-        if (location.issue == ExercisePermissionIssue.locationDenied) {
-          return const ExercisePermissionResult.denied(
-            ExercisePermissionIssue.locationPreviouslyDenied,
-          );
-        }
-        return location;
-      }
+  Future<ExercisePermissionResult> _requestWhenNeeded(
+    bool requiresLocation,
+  ) async {
+    if (requiresLocation) {
+      final location = await _requestLocationWhenNeeded();
+      if (!location.isGranted) return location;
     }
 
     final activityRecognition = await _requestAndroidActivityRecognitionOnce();

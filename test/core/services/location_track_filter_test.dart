@@ -95,4 +95,45 @@ void main() {
 
     expect(filter.distance, 0);
   });
+
+  test('does not expose an isolated first fix as the route origin', () {
+    final filter = LocationTrackFilter(
+      minimumDisplacement: 1,
+      maximumAccuracy: 25,
+      maximumSpeed: 3.2,
+    );
+
+    final first = filter.update(
+      point(latitude: 19.4326, timestamp: originTime),
+    );
+
+    expect(first.accepted, isFalse);
+    expect(filter.hasReliableFixAt(originTime), isFalse);
+  });
+
+  test('replaces a displaced startup fix before recording the route', () {
+    final filter = LocationTrackFilter(
+      minimumDisplacement: 1,
+      maximumAccuracy: 25,
+      maximumSpeed: 3.2,
+    );
+
+    filter.update(point(latitude: 19.4326, timestamp: originTime));
+    final corrected = filter.update(
+      point(
+        latitude: 19.4426,
+        timestamp: originTime.add(const Duration(seconds: 2)),
+      ),
+    );
+    final confirmed = filter.update(
+      point(
+        latitude: 19.44261,
+        timestamp: originTime.add(const Duration(seconds: 4)),
+      ),
+    );
+
+    expect(corrected.accepted, isFalse);
+    expect(confirmed.accepted, isTrue);
+    expect(filter.distance, 0);
+  });
 }

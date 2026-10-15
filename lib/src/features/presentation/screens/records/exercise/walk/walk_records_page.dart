@@ -32,7 +32,9 @@ import 'package:salud_ulv_app/src/features/presentation/shared/widgets/tabs_menu
 import 'package:salud_ulv_app/src/features/presentation/shared/widgets/info.dart';
 
 class WalkRecordsPage extends StatelessWidget {
-  const WalkRecordsPage({super.key});
+  const WalkRecordsPage({super.key, this.initialActivityId});
+
+  final String? initialActivityId;
 
   @override
   Widget build(BuildContext context) {
@@ -54,13 +56,15 @@ class WalkRecordsPage extends StatelessWidget {
         ),
       ],
 
-      child: const _WalkRecordsPage(),
+      child: _WalkRecordsPage(initialActivityId: initialActivityId),
     );
   }
 }
 
 class _WalkRecordsPage extends StatefulWidget {
-  const _WalkRecordsPage();
+  const _WalkRecordsPage({this.initialActivityId});
+
+  final String? initialActivityId;
 
   @override
   State<_WalkRecordsPage> createState() => _WalkRecordsPageState();
@@ -88,7 +92,13 @@ class _WalkRecordsPageState extends State<_WalkRecordsPage> {
 
   void _onWalksLoaded(List<Walk> list) {
     records = list;
-    _index ??= list.length - 1; // only set the first time
+    if (_index != null) return;
+    final requestedIndex = widget.initialActivityId == null
+        ? -1
+        : list.indexWhere(
+            (record) => record.activityID == widget.initialActivityId,
+          );
+    _index = requestedIndex >= 0 ? requestedIndex : list.length - 1;
   }
 
   void _goPrevious() {

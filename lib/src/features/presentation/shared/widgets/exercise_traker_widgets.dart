@@ -655,6 +655,7 @@ class TrackingSheetContent extends StatelessWidget {
         ];
 
       case ExerciseType.running:
+      case ExerciseType.indoorRunning:
         final pace = _formatPace(active?.speed);
         return [
           distanceTile,

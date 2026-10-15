@@ -60,6 +60,7 @@ class LocationTrackFilter {
   final Duration reliableFixLifetime;
 
   LocationTrackPoint? _anchor;
+  LocationTrackPoint? _pendingAnchor;
   DateTime? _lastReliableFixAt;
   DateTime? _lastMovementAt;
   int _stationaryFixes = 0;
@@ -95,18 +96,49 @@ class LocationTrackFilter {
       );
     }
 
-    _lastReliableFixAt = point.timestamp;
-    final anchor = _anchor;
+    var anchor = _anchor;
+    var confirmedInitialAnchor = false;
     if (anchor == null) {
-      _anchor = point;
-      _speed = 0;
-      return const LocationTrackUpdate(
-        accepted: true,
-        distanceDelta: 0,
-        speed: 0,
-        motionState: LocationMotionState.stationary,
+      final pending = _pendingAnchor;
+      if (pending == null) {
+        _pendingAnchor = point;
+        return const LocationTrackUpdate(
+          accepted: false,
+          distanceDelta: 0,
+          speed: 0,
+          motionState: LocationMotionState.unavailable,
+        );
+      }
+
+      final elapsedSeconds = math.max(
+        1.0,
+        point.timestamp.difference(pending.timestamp).inMilliseconds / 1000,
       );
+      final confirmationRadius = math.max(
+        30.0,
+        pending.accuracy +
+            point.accuracy +
+            (maximumSpeed * elapsedSeconds),
+      );
+      if (distanceBetween(pending, point) > confirmationRadius) {
+        // The first fix can be a cached/network location. Do not expose it or
+        // use it as the route origin until another nearby fix confirms it.
+        _pendingAnchor = point;
+        return const LocationTrackUpdate(
+          accepted: false,
+          distanceDelta: 0,
+          speed: 0,
+          motionState: LocationMotionState.unavailable,
+        );
+      }
+
+      anchor = pending;
+      _anchor = pending;
+      _pendingAnchor = null;
+      confirmedInitialAnchor = true;
     }
+
+    _lastReliableFixAt = point.timestamp;
 
     final elapsedSeconds =
         point.timestamp.difference(anchor.timestamp).inMilliseconds / 1000;
@@ -141,7 +173,9 @@ class LocationTrackFilter {
       _speed *= 0.55;
       if (_speed < 0.15) _speed = 0;
       return LocationTrackUpdate(
-        accepted: false,
+        // A confirmed initial fix must be exposed even when the two samples
+        // are close enough to count as stationary.
+        accepted: confirmedInitialAnchor,
         distanceDelta: 0,
         speed: _speed,
         motionState: motionStateAt(point.timestamp),
@@ -176,6 +210,7 @@ class LocationTrackFilter {
 
   void reset() {
     _anchor = null;
+    _pendingAnchor = null;
     _lastReliableFixAt = null;
     _lastMovementAt = null;
     _stationaryFixes = 0;

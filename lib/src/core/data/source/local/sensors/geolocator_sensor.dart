@@ -69,7 +69,7 @@ class GeolocatorSensor implements IGeolocator {
       return null;
     }
 
-    Position? position;
+    Position position;
     try {
       position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -78,13 +78,16 @@ class GeolocatorSensor implements IGeolocator {
         ),
       );
     } on TimeoutException {
-      // GPS does not require Internet, but a fresh fix can take longer indoors.
-      // Use the OS-provided last fix so an offline map opens in the last known
-      // area instead of falling back to a generic country-level position.
-      position = await Geolocator.getLastKnownPosition();
+      // A cached position can belong to a previous trip and must never be used
+      // as the origin of a new exercise. The map remains available offline
+      // while the live tracking stream waits for a fresh GPS fix.
+      return null;
     }
 
-    if (position == null) return null;
+    final age = DateTime.now().difference(position.timestamp);
+    if (age > const Duration(seconds: 30) || position.accuracy > 45) {
+      return null;
+    }
     return Coordinates(
       latitude: position.latitude,
       longitude: position.longitude,
@@ -114,6 +117,9 @@ class GeolocatorSensor implements IGeolocator {
   }
 
   void _onPosition(Position position) {
+    final age = DateTime.now().difference(position.timestamp);
+    if (age > const Duration(seconds: 20)) return;
+
     final update = _filter?.update(
       LocationTrackPoint(
         latitude: position.latitude,

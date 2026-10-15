@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
@@ -54,6 +56,12 @@ class MapWidget extends StatelessWidget {
   final double pointSize = 26;
   final bool satellite;
   final bool showCurrentLocation;
+  final bool navigationMode;
+  final Stream<LocationMarkerPosition?>? positionStream;
+  final Stream<double?>? alignPositionStream;
+  final Stream<void>? alignDirectionStream;
+  final bool followCurrentLocation;
+  final VoidCallback? onUserInteraction;
 
   const MapWidget({
     super.key,
@@ -66,6 +74,12 @@ class MapWidget extends StatelessWidget {
     this.mapReady,
     this.satellite = false,
     this.showCurrentLocation = true,
+    this.navigationMode = false,
+    this.positionStream,
+    this.alignPositionStream,
+    this.alignDirectionStream,
+    this.followCurrentLocation = false,
+    this.onUserInteraction,
   });
 
   @override
@@ -100,12 +114,15 @@ class MapWidget extends StatelessWidget {
         initialCameraFit: initialFit(),
         // Only used if there is no route
         initialCenter: startPoint ?? initialCenter ?? _defaultMapCenter,
-        initialZoom: startPoint == null && initialCenter == null ? 5 : 18,
+        initialZoom: startPoint == null && initialCenter == null ? 5 : 17,
         minZoom: 3,
         // A small amount of overzoom keeps gestures fluid without asking the
         // provider for tile levels that do not exist.
         maxZoom: 21,
         onMapReady: mapReady,
+        onPositionChanged: (_, hasGesture) {
+          if (hasGesture) onUserInteraction?.call();
+        },
 
         interactionOptions: InteractionOptions(
           flags: interactive ? InteractiveFlag.all : InteractiveFlag.none,
@@ -113,6 +130,11 @@ class MapWidget extends StatelessWidget {
       ),
 
       children: [
+        // A lightweight local base is always painted first. Cached/network
+        // tiles cover it when available; on a first launch without internet
+        // the user still gets a usable spatial canvas, location marker and
+        // recorded route instead of a blank/error surface.
+        const _OfflineMapBackdrop(),
         _CachedNetworkTileLayer(
           key: ValueKey(tileSource.urlTemplate),
           tileSource: tileSource,
@@ -180,18 +202,142 @@ class MapWidget extends StatelessWidget {
 
         if (showCurrentLocation)
           CurrentLocationLayer(
+            positionStream: positionStream,
+            focalPoint: navigationMode
+                ? const FocalPoint(
+                    ratio: Offset(0, 0.42),
+                    offset: Offset(0, -48),
+                  )
+                : const FocalPoint(),
+            alignPositionStream: alignPositionStream,
+            alignDirectionStream: alignDirectionStream,
+            alignPositionOnUpdate: navigationMode && followCurrentLocation
+                ? AlignOnUpdate.always
+                : AlignOnUpdate.never,
+            alignDirectionOnUpdate: navigationMode && followCurrentLocation
+                ? AlignOnUpdate.always
+                : AlignOnUpdate.never,
+            alignPositionAnimationDuration: const Duration(milliseconds: 320),
+            alignDirectionAnimationDuration: const Duration(milliseconds: 180),
+            moveAnimationDuration: const Duration(milliseconds: 320),
+            rotateAnimationDuration: const Duration(milliseconds: 180),
             style: LocationMarkerStyle(
               markerAlignment: .center,
               marker: DefaultLocationMarker(
-                child: Icon(Icons.location_pin, color: context.colors.primary),
+                child: Icon(
+                  navigationMode
+                      ? Icons.navigation_rounded
+                      : Icons.location_pin,
+                  color: navigationMode
+                      ? context.colors.onSecondary
+                      : context.colors.primary,
+                ),
               ),
-              markerSize: Size(15, 15),
+              markerSize: navigationMode
+                  ? const Size(40, 40)
+                  : const Size(15, 15),
               markerDirection: .heading,
+              showAccuracyCircle: navigationMode,
+              accuracyCircleColor: context.colors.secondary.withValues(
+                alpha: 0.12,
+              ),
+              showHeadingSector: navigationMode,
+              headingSectorColor: context.colors.secondary.withValues(
+                alpha: 0.18,
+              ),
             ),
           ),
       ],
     );
   }
+}
+
+class _OfflineMapBackdrop extends StatelessWidget {
+  const _OfflineMapBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return ColoredBox(
+      color: dark ? const Color(0xFF142126) : const Color(0xFFE8ECE8),
+      child: CustomPaint(
+        painter: _OfflineMapPainter(dark: dark),
+        child: Align(
+          alignment: const Alignment(-0.88, 0.88),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: (dark ? Colors.black : Colors.white).withValues(
+                alpha: 0.7,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              'Mapa disponible sin conexión',
+              style: TextStyle(
+                color: dark ? Colors.white70 : const Color(0xFF405157),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OfflineMapPainter extends CustomPainter {
+  const _OfflineMapPainter({required this.dark});
+  final bool dark;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final minor = Paint()
+      ..color = (dark ? Colors.white : const Color(0xFF607D78)).withValues(
+        alpha: 0.07,
+      )
+      ..strokeWidth = 1;
+    final major = Paint()
+      ..color = (dark ? const Color(0xFF7AA6A2) : const Color(0xFF78918B))
+          .withValues(alpha: 0.16)
+      ..strokeWidth = 2;
+
+    const cell = 44.0;
+    for (double x = 0; x <= size.width; x += cell) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), minor);
+    }
+    for (double y = 0; y <= size.height; y += cell) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), minor);
+    }
+
+    final roadA = ui.Path()
+      ..moveTo(-20, size.height * 0.72)
+      ..cubicTo(
+        size.width * 0.22,
+        size.height * 0.58,
+        size.width * 0.55,
+        size.height * 0.78,
+        size.width + 20,
+        size.height * 0.42,
+      );
+    final roadB = ui.Path()
+      ..moveTo(size.width * 0.22, -20)
+      ..cubicTo(
+        size.width * 0.4,
+        size.height * 0.24,
+        size.width * 0.34,
+        size.height * 0.58,
+        size.width * 0.62,
+        size.height + 20,
+      );
+    canvas.drawPath(roadA, major);
+    canvas.drawPath(roadB, major);
+  }
+
+  @override
+  bool shouldRepaint(covariant _OfflineMapPainter oldDelegate) =>
+      dark != oldDelegate.dark;
 }
 
 /// Keeps one HTTP tile provider alive while this map layer is mounted.
